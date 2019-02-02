@@ -1,0 +1,7 @@
+jaicore.graphvisualizer
+jaicore.graphvisualizer.events.controlEvents
+jaicore.graphvisualizer.events.graphEvents
+jaicore.graphvisualizer.events.misc
+jaicore.graphvisualizer.gui
+jaicore.graphvisualizer.gui.dataSupplier
+jaicore.graphvisualizer.gui.dataVisualizer

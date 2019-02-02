@@ -1,0 +1,11 @@
+hasco.core
+hasco.eventlogger
+hasco.events
+hasco.exceptions
+hasco.metamining
+hasco.model
+hasco.optimizingfactory
+hasco.reduction
+hasco.serialization
+hasco.variants.forwarddecomposition
+hasco.variants.forwarddecomposition.twophase
