@@ -110,7 +110,11 @@ allprojects {
 			}
 		}
 	}
-
+	task generateJavadoc(type: Javadoc) {
+        source = sourceSets.main.allJava
+        classpath = files(sourceSets.main.compileClasspath)
+        destinationDir = file("java-doc")
+    }
 }
 
 dependencies{
