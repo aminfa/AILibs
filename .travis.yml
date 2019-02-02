@@ -19,17 +19,19 @@ install:
 - true
 jobs:
   include:
+  - stage: javadoc
+    script:
+      - "./gradlew assemble"
+      - "./gradlew generateJavadoc"
+    after_success:
+      - bash .travis_push.sh
   - stage: compile
     script: "./gradlew build -x test"
 #  - stage: sonarqube
 #    script: "./gradlew sonar -PsystemProp.sonar.host.url=$sonarHost -PsystemProp.sonar.login=$sonarToken"
   - stage: deploy
     script: "./gradlew publish -PnexusBaseUrl=$nexusBaseUrl -PnexusUpRepo=$nexusUpRepo -PnexusUser=$nexusUser -PnexusPassword=$nexusPassword"
-script:
-  - "./gradlew assemble"
-  - "./gradlew generateJavadoc"
-after_success:
-- bash .travis_push.sh
+
 
 env:
   global:
