@@ -6,9 +6,9 @@ setup_git() {
 }
 
 commit_website_files() {
-  git remote add origin-pages https://${GH_TOKEN}@github.com/aminfa/AILibs.git > /dev/null 2>&1
+  git remote add origin https://${GH_TOKEN}@github.com/aminfa/AILibs.git > /dev/null 2>&1
   git fetch
-  git checkout -b javadoc
+  git checkout -t origin/javadoc
   git add ./\*.html
   git add ./\*.css
   git add ./\*.js
@@ -17,7 +17,7 @@ commit_website_files() {
 }
 
 upload_files() {
-  git push --quiet --set-upstream origin-pages javadoc 
+  git push --quiet --set-upstream origin javadoc 
 }
 
 setup_git
