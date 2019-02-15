@@ -7,8 +7,8 @@ setup_git() {
 
 commit_website_files() {
   git remote add origin https://${GH_TOKEN}@github.com/aminfa/AILibs.git > /dev/null 2>&1
-  git fetch
-  git checkout -t origin/javadoc
+  git checkout javadoc
+  git pull
   git add ./\*.html
   git add ./\*.css
   git add ./\*.js
