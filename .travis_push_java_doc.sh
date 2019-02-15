@@ -6,10 +6,9 @@ setup_git() {
 }
 
 commit_website_files() {
-  git remote add origin https://github.com/aminfa/AILibs.git
+  git remote add origin-down https://github.com/aminfa/AILibs.git
   git remote update
-  git fetch 
-  git checkout --track javadoc
+  git checkout --track origin-down/javadoc
   git add ./\*.html
   git add ./\*.css
   git add ./\*.js
