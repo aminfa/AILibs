@@ -6,9 +6,10 @@ setup_git() {
 }
 
 commit_website_files() {
-  git remote add origin https://${GH_TOKEN}@github.com/aminfa/AILibs.git > /dev/null 2>&1
-  git checkout javadoc
-  git pull
+  git remote add origin https://github.com/aminfa/AILibs.git
+  git remote update
+  git fetch 
+  git checkout --track javadoc
   git add ./\*.html
   git add ./\*.css
   git add ./\*.js
@@ -17,7 +18,8 @@ commit_website_files() {
 }
 
 upload_files() {
-  git push --quiet --set-upstream origin javadoc 
+  git remote add origin-up https://${GH_TOKEN}@github.com/aminfa/AILibs.git > /dev/null 2>&1
+  git push --quiet --set-upstream origin-up javadoc 
 }
 
 setup_git
