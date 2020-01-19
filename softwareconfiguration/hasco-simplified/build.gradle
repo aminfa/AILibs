@@ -1,0 +1,8 @@
+dependencies {
+	compile project(':hasco')
+
+	// basic dependencies
+	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8'
+
+	testCompile project(path: ':JAICore:jaicore-basic', configuration: 'testArtifacts')
+}

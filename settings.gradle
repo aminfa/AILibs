@@ -20,6 +20,9 @@ include ":JAICore:jaicore-search"
 include 'hasco'
 project(":hasco").projectDir = new File(configPrefix,"hasco")
 
+include 'hasco-simplified'
+project(":hasco-simplified").projectDir = new File(configPrefix,"hasco-simplified")
+
 include 'mlplan'
 project(":mlplan").projectDir = new File(configPrefix,"mlplan")
 
