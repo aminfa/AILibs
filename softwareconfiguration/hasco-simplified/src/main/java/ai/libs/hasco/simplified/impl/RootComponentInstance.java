@@ -21,15 +21,17 @@ public class RootComponentInstance extends ComponentInstance {
         super(component, parameterValues, satisfactionOfRequiredInterfaces);
     }
 
-    public RootComponentInstance(RootComponentInstance prevComponent, List<ComponentRefinementRecord> refinements) {
-        super(prevComponent.getComponent(),
-                new HashMap<>(prevComponent.getParameterValues()),
-                new HashMap<>(prevComponent.getSatisfactionOfRequiredInterfaces()));
-        refinementHistory = new ArrayList<>(prevComponent.getRefinementHistory());
+    public RootComponentInstance(RootComponentInstance baseComponent) {
+        super(baseComponent.getComponent(),
+                new HashMap<>(baseComponent.getParameterValues()),
+                new HashMap<>(baseComponent.getSatisfactionOfRequiredInterfaces()));
+
+        refinementHistory = new ArrayList<>(baseComponent.getRefinementHistory());
     }
 
     public boolean refineParameter(List<String> componentPath, String propertyName, RefinementCallback refiner) {
         ComponentInstance refinedComponent = searchSatisfyingComponent(componentPath);
+
         
     }
 

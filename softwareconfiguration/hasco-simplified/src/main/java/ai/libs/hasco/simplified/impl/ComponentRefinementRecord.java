@@ -17,9 +17,9 @@ public class ComponentRefinementRecord {
      * This array is never empty or null.
      * An array was used to save memory: reuse the String values and only reference it through the array.
      */
-    private String[] propertyRefinementPath;
+    private final String[] propertyRefinementPath;
 
-    private boolean propertyIsParam;
+    private final boolean propertyIsParam;
 
     private ComponentRefinementRecord(String[] propertyRefinementPath, boolean propertyIsParam) {
         this.propertyRefinementPath = propertyRefinementPath;
@@ -30,10 +30,18 @@ public class ComponentRefinementRecord {
         return new ComponentRefinementRecord(componentPath, false);
     }
 
+    public static ComponentRefinementRecord refineRequiredInterface(String[] parentComponentPath, String requiredInterfaceName) {
+        final int componentDepth = parentComponentPath.length;
+        final String[] componentPath = Arrays.copyOf(parentComponentPath, componentDepth + 1);
+        componentPath[componentDepth] = requiredInterfaceName;
+        return new ComponentRefinementRecord(componentPath, false);
+    }
+
     public static ComponentRefinementRecord refineRequiredInterface(String[] componentPath, String paramName, String paramValue) {
-        String[] propertyRefinementPath = Arrays.copyOf(componentPath, componentPath.length + 2);
-        propertyRefinementPath[componentPath.length - 2] = paramName;
-        propertyRefinementPath[componentPath.length - 1] = paramValue;
+        final int componentDepth = componentPath.length;
+        final String[] propertyRefinementPath = Arrays.copyOf(componentPath, componentDepth + 2);
+        propertyRefinementPath[componentDepth] = paramName;
+        propertyRefinementPath[componentDepth + 1] = paramValue;
         return new ComponentRefinementRecord(propertyRefinementPath, true);
     }
 
@@ -43,5 +51,25 @@ public class ComponentRefinementRecord {
 
     public boolean isPropertyIsParam() {
         return propertyIsParam;
+    }
+
+    public String getParamName() {
+        if(propertyIsParam) {
+            return propertyRefinementPath[propertyRefinementPath.length-2];
+        } else {
+            throw new IllegalStateException(toString());
+        }
+    }
+
+    public String getParamValue() {
+        if(propertyIsParam) {
+            return propertyRefinementPath[propertyRefinementPath.length-1];
+        } else {
+            throw new IllegalStateException(toString());
+        }
+    }
+
+    public String toString() {
+        return String.format("refinement record: %s, %b", Arrays.toString(propertyRefinementPath), propertyIsParam);
     }
 }
