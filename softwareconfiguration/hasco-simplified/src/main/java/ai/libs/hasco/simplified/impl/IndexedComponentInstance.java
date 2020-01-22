@@ -20,4 +20,8 @@ public class IndexedComponentInstance extends ComponentInstance {
         super(component, parameterValues, satisfactionOfRequiredInterfaces);
         this.index = componentIndex;
     }
+
+    public Integer getIndex() {
+        return index;
+    }
 }

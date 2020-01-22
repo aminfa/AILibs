@@ -2,72 +2,98 @@ package ai.libs.hasco.simplified.impl;
 
 import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.ComponentInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
  */
-public class RootComponentInstance extends ComponentInstance {
+public class RootComponentInstance extends IndexedComponentInstance {
 
-    private List<ComponentRefinementRecord> refinementHistory;
+    private final static Logger logger = LoggerFactory.getLogger(RootComponentInstance.class);
 
-    public RootComponentInstance(Component component,
-                                 Map<String, String> parameterValues,
-                                 Map<String, ComponentInstance> satisfactionOfRequiredInterfaces) {
-        super(component, parameterValues, satisfactionOfRequiredInterfaces);
+    private final List<ComponentRefinementRecord> refinementHistory;
+
+    private AtomicInteger nextFreeId;
+
+    private RootComponentInstance(Component component, Map<String, String> parameterValues, Map<String, ComponentInstance> satisfactionOfRequiredInterfaces) {
+        super(component, parameterValues, satisfactionOfRequiredInterfaces, 0);
+        nextFreeId = new AtomicInteger(1);
+        refinementHistory = Collections.EMPTY_LIST;
     }
+
+    public static RootComponentInstance createRoot(Component component) {
+        logger.info("Creating root component instance of {}.", component.getName());
+        return new RootComponentInstance(component, new HashMap<>(), new HashMap<>());
+    }
+
+
 
     public RootComponentInstance(RootComponentInstance baseComponent) {
         super(baseComponent.getComponent(),
                 new HashMap<>(baseComponent.getParameterValues()),
-                new HashMap<>(baseComponent.getSatisfactionOfRequiredInterfaces()));
+                new HashMap<>(baseComponent.getSatisfactionOfRequiredInterfaces()), // deep copy comes later
+                baseComponent.getIndex());
 
         refinementHistory = new ArrayList<>(baseComponent.getRefinementHistory());
+        nextFreeId = new AtomicInteger(baseComponent.nextFreeId.get());
+
+        performDeepCopy(baseComponent);
     }
 
-    public boolean refineParameter(List<String> componentPath, String propertyName, RefinementCallback refiner) {
-        ComponentInstance refinedComponent = searchSatisfyingComponent(componentPath);
-
-        
-    }
-
-    private ComponentInstance searchSatisfyingComponent(List<String> componentPath) {
-        if(componentPath == null || componentPath.isEmpty()) {
-            return this;
-        }
-        ComponentInstance trg = this, prev = this;
-
-        for(String requiredInterfaceName : componentPath) {
-            prev = trg;
-            trg = getSatisfyingComponent(prev, requiredInterfaceName);
-            if(trg == null) {
-                if(prev.getComponent().getRequiredInterfaces().containsKey(requiredInterfaceName))
-                    throw new IllegalArgumentException("ComponentInstance with path" + componentPath + " not found.\n" +
-                            "Component Instance " + prev.getComponent().getName()
-                            + " doesn't have the required interface called: " + requiredInterfaceName +
-                            " satisfied.");
-                else
-                    throw new IllegalArgumentException("ComponentInstance with path" + componentPath + " not found.\n" +
-                        "Component Instance " + prev.getComponent().getName()
-                        + " doesn't have a required interface called: " + requiredInterfaceName);
+    private void performDeepCopy(RootComponentInstance baseComponent) {
+        Deque<IndexedComponentInstance> copyWaitingList = new LinkedList<>();
+        Map<Integer, IndexedComponentInstance> allCopies = new HashMap<>();
+        allCopies.put(getIndex(), this);
+        copyWaitingList.add(this);
+        while(!copyWaitingList.isEmpty()) {
+            IndexedComponentInstance next = copyWaitingList.pop();
+            /*
+             * Replace all satisfying inner component instances with a copy of them:
+             */
+            Map<String, ComponentInstance> satMap = next.getSatisfactionOfRequiredInterfaces();
+            for(String requiredInterface : satMap.keySet()) {
+                ComponentInstance componentInstance = satMap.get(requiredInterface);
+                Objects.requireNonNull(componentInstance,
+                        String.format("Component of required interface %s was null.", requiredInterface));
+                IndexedComponentInstance copiedInstance;
+                if(!(componentInstance instanceof IndexedComponentInstance)) {
+                    throw new IllegalStateException("A component instance has an unrecognized type: "
+                            + componentInstance.getComponent().getName()
+                            + ". type: " + componentInstance.getClass().getName());
+                }
+                Integer index = ((IndexedComponentInstance) componentInstance).getIndex();
+                copiedInstance = allCopies.get(index);
+                if(copiedInstance == null) {
+                    if(componentInstance instanceof ChildComponentInstance)
+                        copiedInstance = new ChildComponentInstance(componentInstance.getComponent(),
+                                new HashMap<>(componentInstance.getParameterValues()),
+                                new HashMap<>(componentInstance.getSatisfactionOfRequiredInterfaces()),
+                                index,
+                                ((ChildComponentInstance) componentInstance).getPath()
+                                );
+                    else
+                        throw new IllegalStateException("A component instance has an unrecognized type: "
+                                + componentInstance.getComponent().getName()
+                                + ". type: " + componentInstance.getClass().getName());
+                    allCopies.put(index, copiedInstance);
+                    copyWaitingList.add(copiedInstance);
+                }
+                satMap.put(requiredInterface, copiedInstance);
             }
         }
-        return trg;
+
     }
 
-    private ComponentInstance getSatisfyingComponent(ComponentInstance base, String requiredInterfaceName) {
-        ComponentInstance component = base.getSatisfactionOfRequiredInterfaces().get(requiredInterfaceName);
-
-        return component;
-    }
 
 
     public List<ComponentRefinementRecord> getRefinementHistory() {
         return refinementHistory;
     }
+
+
 
 }

@@ -1,5 +1,5 @@
 dependencies {
-	compile project(':hasco')
+	compile project(':hasco-core')
 
 	// basic dependencies
 	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8'
