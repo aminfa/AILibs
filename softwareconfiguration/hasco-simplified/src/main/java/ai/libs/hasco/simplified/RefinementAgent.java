@@ -1,4 +1,4 @@
-package ai.libs.hasco.simplified.std;
+package ai.libs.hasco.simplified;
 
 import ai.libs.hasco.model.CategoricalParameterDomain;
 import ai.libs.hasco.model.ComponentInstance;
@@ -9,17 +9,17 @@ import java.util.List;
 public interface RefinementAgent {
 
     boolean refineCategoricalParameter(List<ComponentInstance> refinements,
-                                       ComponentInstance component,
+                                       ComponentInstance base, ComponentInstance component,
                                        CategoricalParameterDomain domain,
-                                       String currentValue);
+                                       String name, String currentValue);
 
     boolean refineNumericalParameter(List<ComponentInstance> refinements,
-                                     ComponentInstance component,
+                                     ComponentInstance base, ComponentInstance component,
                                      NumericParameterDomain domain,
-                                     String currentValue);
+                                     String name, String currentValue);
 
     boolean refineRequiredInterface(List<ComponentInstance> refinements,
-                                    ComponentInstance component,
-                                    String requiredInterface);
+                                    ComponentInstance base, ComponentInstance component,
+                                    String name, String requiredInterface);
 
 }

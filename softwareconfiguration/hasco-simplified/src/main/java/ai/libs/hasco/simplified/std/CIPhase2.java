@@ -7,48 +7,50 @@ import ai.libs.hasco.model.Parameter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class CIPhase2 extends IndexedComponentInstance{
+public class CIPhase2 extends CIIndexed {
 
 
     private final CIPhase1 ciPhase1Parent; // TODO remove reference to parent if it isn't needed
 
-    private List<ComponentParamRefinementRecord> paramOrder;
+    private List<ParamRefinementRecord> paramOrder;
 
-    private int nextParamIndex = 0;
+    private int nextParamIndex;
 
     /**
      * Constructor for creating a <code>ComponentInstance</code> for a particular <code>Component</code>.
-     *
-     * @param component                        The component that is grounded.
+     *  @param component                        The component that is grounded.
      * @param parameterValues                  A map containing the parameter values of this grounding.
      * @param satisfactionOfRequiredInterfaces
+     * @param nextParamIndex
      */
-    private CIPhase2(Component component, Map<String, String> parameterValues, Map<String, ComponentInstance> satisfactionOfRequiredInterfaces, CIPhase1 ciPhase1Parent, Integer index) {
+    private CIPhase2(Component component, Map<String, String> parameterValues, Map<String, ComponentInstance> satisfactionOfRequiredInterfaces, CIPhase1 ciPhase1Parent, Integer index, int nextParamIndex) {
         super(component, parameterValues, satisfactionOfRequiredInterfaces, index);
         this.ciPhase1Parent = Objects.requireNonNull(ciPhase1Parent);
+        this.nextParamIndex = nextParamIndex;
     }
 
     public CIPhase2(CIPhase1 ciPhase1Parent) {
         this(ciPhase1Parent.getComponent(),
                 Collections.emptyMap(),
-                Collections.unmodifiableMap(ciPhase1Parent.getSatisfactionOfRequiredInterfaces()),
+                new HashMap<>(ciPhase1Parent.getSatisfactionOfRequiredInterfaces()),
                 ciPhase1Parent,
-                ciPhase1Parent.getIndex());
+                ciPhase1Parent.getIndex(), 0);
+        performDeepCopy();
     }
 
 
-    public CIPhase2(CIPhase2 ciPhase2Parent, int nextParamIndex) {
+    public CIPhase2(CIPhase2 ciPhase2Parent) {
         this(ciPhase2Parent.getComponent(),
                 new HashMap<>(ciPhase2Parent.getParameterValues()),
-                ciPhase2Parent.getSatisfactionOfRequiredInterfaces(),
+                new HashMap<>(ciPhase2Parent.getSatisfactionOfRequiredInterfaces()),
                 ciPhase2Parent.ciPhase1Parent,
-                ciPhase2Parent.getIndex());
-
-        paramOrder = ciPhase2Parent.getParamOrder();
-        this.nextParamIndex = nextParamIndex;
+                ciPhase2Parent.getIndex(),
+                (ciPhase2Parent.nextParamIndex + 1) % ciPhase2Parent.getParamOrder().size());
+        this.paramOrder = ciPhase2Parent.getParamOrder();
+        performDeepCopy();
     }
 
-    protected List<ComponentParamRefinementRecord> getParamOrder() {
+    protected List<ParamRefinementRecord> getParamOrder() {
         if(paramOrder == null) {
             createParamOrder();
         }
@@ -60,50 +62,50 @@ public class CIPhase2 extends IndexedComponentInstance{
         List<Parameter> params = this.getComponent()
                 .getParameters()
                 .getLinearization();
-        List<CIChild> children = getChildren(this.getSatisfactionOfRequiredInterfaces());
+        List<CIIndexed> children = getChildren(this.getSatisfactionOfRequiredInterfaces());
 
-        LinkedList<ComponentParamRefinementRecord> orderedParams = createParamOrder(new String[0],
+        LinkedList<ParamRefinementRecord> orderedParams = createParamOrder(new String[0],
                 params, children, 0, indexGuard);
 
         this.paramOrder = Collections.unmodifiableList(new ArrayList<>(orderedParams)); // wrap for faster access and safety
     }
 
-    private static List<CIChild> getChildren(Map<String, ComponentInstance> interfaces) {
+    private static List<CIIndexed> getChildren(Map<String, ComponentInstance> interfaces) {
         return interfaces.values()
                 .stream()
-                .map(c -> (CIChild) c)
+                .map(c -> (CIIndexed) c)
                 .collect(Collectors.toList());
     }
 
 
-    private static LinkedList<ComponentParamRefinementRecord> createParamOrder(String[] path,
-                                               List<Parameter> parameters,
-                                               List<CIChild> children,
-                                               Integer index,
-                                               Set<Integer> indexGuard) {
+    private static LinkedList<ParamRefinementRecord> createParamOrder(String[] path,
+                                                                      List<Parameter> parameters,
+                                                                      List<CIIndexed> children,
+                                                                      Integer index,
+                                                                      Set<Integer> indexGuard) {
         if(indexGuard.contains(index)) {
             return new LinkedList<>();
         }
         indexGuard.add(index);
-        Deque<ComponentParamRefinementRecord> paramPathList = createParamQueue(parameters, path);
-        List<Deque<ComponentParamRefinementRecord>> roundRobinList = new ArrayList<>();
+        Deque<ParamRefinementRecord> paramPathList = createParamQueue(parameters, path);
+        List<Deque<ParamRefinementRecord>> roundRobinList = new ArrayList<>();
         roundRobinList.add(paramPathList);
         children.stream().map(c -> recursiveSort(c, indexGuard)).forEachOrdered(roundRobinList::add);
         return drawParamRoundRobin(roundRobinList);
     }
 
-    private static LinkedList<ComponentParamRefinementRecord> createParamQueue(List<Parameter> params, String[] path) {
+    private static LinkedList<ParamRefinementRecord> createParamQueue(List<Parameter> params, String[] path) {
         return params.stream()
-                .map(p -> new ComponentParamRefinementRecord(path, p.getName()))
+                .map(p -> new ParamRefinementRecord(path, p.getName()))
                 .collect(Collectors.toCollection(LinkedList::new));
     }
 
 
-    private static LinkedList<ComponentParamRefinementRecord> recursiveSort(CIChild child, Set<Integer> indexGuard) {
+    private static LinkedList<ParamRefinementRecord> recursiveSort(CIIndexed child, Set<Integer> indexGuard) {
         String[] path = child.getPath();
         List<Parameter> params = child.getComponent().getParameters().getLinearization();
         Integer index = child.getIndex();
-        List<CIChild> grandChildren = getChildren(child.getSatisfactionOfRequiredInterfaces());
+        List<CIIndexed> grandChildren = getChildren(child.getSatisfactionOfRequiredInterfaces());
         return createParamOrder(path,
                 params,
                 grandChildren,
@@ -111,13 +113,21 @@ public class CIPhase2 extends IndexedComponentInstance{
                 indexGuard);
     }
 
-    private static LinkedList<ComponentParamRefinementRecord> drawParamRoundRobin(List<Deque<ComponentParamRefinementRecord>> roundRobinList){
-        LinkedList<ComponentParamRefinementRecord> result = new LinkedList<>();
-        for (Deque<ComponentParamRefinementRecord> queue : roundRobinList) {
+    private static LinkedList<ParamRefinementRecord> drawParamRoundRobin(List<Deque<ParamRefinementRecord>> roundRobinList){
+        LinkedList<ParamRefinementRecord> result = new LinkedList<>();
+        for (Deque<ParamRefinementRecord> queue : roundRobinList) {
             if (!queue.isEmpty())
                 result.add(queue.pop());
         }
         return result;
+    }
+
+    public ParamRefinementRecord getNextParamToBeRefined() {
+        return paramOrder.get(nextParamIndex);
+    }
+
+    public void nextParameter() {
+        nextParamIndex++;
     }
 
 }

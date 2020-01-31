@@ -8,13 +8,13 @@ import ai.libs.hasco.simplified.OpenList;
 
 import java.util.*;
 
-public class BFSCandidateContainer implements ClosedList, OpenList {
+public class StdCandidateContainer implements ClosedList, OpenList {
 
     private final PriorityQueue<ComponentInstance> queue;
 
     private final EvaluationCache evaluationCache;
 
-    public BFSCandidateContainer(ComponentRegistry registry) {
+    public StdCandidateContainer(ComponentRegistry registry) {
         this.evaluationCache = new EvaluationCache();
         this.queue = new PriorityQueue<>(evaluationCache);
     }

@@ -1,4 +1,4 @@
-package ai.libs.hasco.simplified.std;
+package ai.libs.hasco.simplified;
 
 import ai.libs.hasco.model.*;
 import org.slf4j.Logger;
@@ -85,9 +85,8 @@ public class RefinementProcess {
                         displayName, baseComponent.getName(), requiredInterfaceId, null);
                 throw new NullPointerException("Required interface is null: " + requiredInterfaceId);
             }
-            boolean refinementDone = refiner.refineRequiredInterface(children,
-                    nextComponentToBeRefined,
-                    requiredInterface);
+            boolean refinementDone = refiner.refineRequiredInterface(children, base,
+                    nextComponentToBeRefined, requiredInterfaceId, requiredInterface);
             if(refinementDone && children.isEmpty()){
                 logger.warn("{} - The refinement " +
                         "returned no candidates but signaled that it is finished.",
@@ -127,15 +126,13 @@ public class RefinementProcess {
         String parameterValue = nextComponentToBeRefined.getParameterValue(paramToBeRefined);
         boolean refinementDone = false;
         if (paramToBeRefined.isNumeric()) {
-            refinementDone = refinementDone = refiner.refineNumericalParameter(children,
+            refinementDone = refinementDone = refiner.refineNumericalParameter(children, base,
                     nextComponentToBeRefined,
-                    (NumericParameterDomain) paramToBeRefined.getDefaultDomain(),
-                    parameterValue);
+                    (NumericParameterDomain) paramToBeRefined.getDefaultDomain(), paramName, parameterValue);
         } else if (paramToBeRefined.isCategorical()) {
-            refinementDone = refinementDone = refiner.refineCategoricalParameter(children,
+            refinementDone = refinementDone = refiner.refineCategoricalParameter(children, base,
                     nextComponentToBeRefined,
-                    (CategoricalParameterDomain) paramToBeRefined.getDefaultDomain(),
-                    parameterValue);
+                    (CategoricalParameterDomain) paramToBeRefined.getDefaultDomain(), paramName, parameterValue);
         } else {
             logger.error("Parameter {}.{} is neither numerical nor categorical. Ignoring parameter", baseComponent.getName(), paramName);
             return false;
@@ -181,5 +178,9 @@ public class RefinementProcess {
     private ComponentInstance getSatisfyingComponent(ComponentInstance base, String requiredInterfaceName) {
         ComponentInstance component = base.getSatisfactionOfRequiredInterfaces().get(requiredInterfaceName);
         return component;
+    }
+
+    public List<ComponentInstance> getRefinements() {
+        return refinements;
     }
 }

@@ -8,7 +8,7 @@ import java.util.Arrays;
  * or the fulfillment of a required interface  by the component.
  *
  */
-public class ComponentInterfaceRefinementRecord {
+public class InterfaceRefinementRecord {
 
     /**
      * This array contains the path to the property that was refined.
@@ -19,19 +19,19 @@ public class ComponentInterfaceRefinementRecord {
      */
     private final String[] interfaceRefinementPath;
 
-    private ComponentInterfaceRefinementRecord(String[] interfaceRefinementPath) {
+    private InterfaceRefinementRecord(String[] interfaceRefinementPath) {
         this.interfaceRefinementPath = interfaceRefinementPath;
     }
 
-    public static ComponentInterfaceRefinementRecord refineRequiredInterface(String[] componentPath) {
-        return new ComponentInterfaceRefinementRecord(componentPath);
+    public static InterfaceRefinementRecord refineRequiredInterface(String[] componentPath) {
+        return new InterfaceRefinementRecord(componentPath);
     }
 
-    public static ComponentInterfaceRefinementRecord refineRequiredInterface(String[] parentComponentPath, String requiredInterfaceName) {
+    public static InterfaceRefinementRecord refineRequiredInterface(String[] parentComponentPath, String requiredInterfaceName) {
         final int componentDepth = parentComponentPath.length;
         final String[] componentPath = Arrays.copyOf(parentComponentPath, componentDepth + 1);
         componentPath[componentDepth] = requiredInterfaceName;
-        return new ComponentInterfaceRefinementRecord(componentPath);
+        return new InterfaceRefinementRecord(componentPath);
     }
 
     public String[] getInterfaceRefinementPath() {

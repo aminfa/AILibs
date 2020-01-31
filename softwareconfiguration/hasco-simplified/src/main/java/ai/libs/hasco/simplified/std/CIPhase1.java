@@ -11,13 +11,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  *
  */
-public class CIPhase1 extends IndexedComponentInstance implements RoutableCI {
-
-    private static final String[] ROOT_PATH = new String[0];
+public class CIPhase1 extends CIIndexed {
 
     private final static Logger logger = LoggerFactory.getLogger(CIPhase1.class);
 
-    private final List<ComponentInterfaceRefinementRecord> refinementHistory;
+    private final List<InterfaceRefinementRecord> refinementHistory;
 
     private AtomicInteger nextFreeId;
 
@@ -43,59 +41,18 @@ public class CIPhase1 extends IndexedComponentInstance implements RoutableCI {
         refinementHistory = new ArrayList<>(baseComponent.getRefinementHistory());
         nextFreeId = new AtomicInteger(baseComponent.nextFreeId.get());
 
-        performDeepCopy(baseComponent);
+        performDeepCopy();
     }
 
-    private void performDeepCopy(CIPhase1 baseComponent) {
-        Deque<IndexedComponentInstance> copyWaitingList = new LinkedList<>();
-        Map<Integer, IndexedComponentInstance> allCopies = new HashMap<>();
-        allCopies.put(getIndex(), this);
-        copyWaitingList.add(this);
-        while(!copyWaitingList.isEmpty()) {
-            IndexedComponentInstance next = copyWaitingList.pop();
-            /*
-             * Replace all satisfying inner component instances with a copy of them:
-             */
-            Map<String, ComponentInstance> satMap = next.getSatisfactionOfRequiredInterfaces();
-            for(String requiredInterface : satMap.keySet()) {
-                ComponentInstance componentInstance = satMap.get(requiredInterface);
-                Objects.requireNonNull(componentInstance,
-                        String.format("Component of required interface %s was null.", requiredInterface));
-                IndexedComponentInstance copiedInstance;
-                if(!(componentInstance instanceof IndexedComponentInstance)) {
-                    throw new IllegalStateException("A component instance has an unrecognized type: "
-                            + componentInstance.getComponent().getName()
-                            + ". type: " + componentInstance.getClass().getName());
-                }
-                Integer index = ((IndexedComponentInstance) componentInstance).getIndex();
-                copiedInstance = allCopies.get(index);
-                if(copiedInstance == null) {
-                    if(componentInstance instanceof CIChild)
-                        copiedInstance = new CIChild(componentInstance.getComponent(),
-                                new HashMap<>(componentInstance.getParameterValues()),
-                                new HashMap<>(componentInstance.getSatisfactionOfRequiredInterfaces()),
-                                index,
-                                ((CIChild) componentInstance).getPath()
-                                );
-                    else
-                        throw new IllegalStateException("A component instance has an unrecognized type: "
-                                + componentInstance.getComponent().getName()
-                                + ". type: " + componentInstance.getClass().getName());
-                    allCopies.put(index, copiedInstance);
-                    copyWaitingList.add(copiedInstance);
-                }
-                satMap.put(requiredInterface, copiedInstance);
-            }
-        }
-
-    }
-
-    public List<ComponentInterfaceRefinementRecord> getRefinementHistory() {
+    public List<InterfaceRefinementRecord> getRefinementHistory() {
         return refinementHistory;
     }
 
-    @Override
-    public String[] getPath() {
-        return ROOT_PATH;
+    public Integer allocateNextIndex() {
+        return nextFreeId.getAndIncrement();
+    }
+
+    public void addRecord(InterfaceRefinementRecord refinementRecord) {
+        refinementHistory.add(refinementRecord);
     }
 }
