@@ -14,7 +14,7 @@ public class StdCandidateContainer implements ClosedList, OpenList {
 
     private final EvaluationCache evaluationCache;
 
-    public StdCandidateContainer(ComponentRegistry registry) {
+    public StdCandidateContainer() {
         this.evaluationCache = new EvaluationCache();
         this.queue = new PriorityQueue<>(evaluationCache);
     }
@@ -39,6 +39,11 @@ public class StdCandidateContainer implements ClosedList, OpenList {
         }
 
         queue.add(candidate);
+    }
+
+    public void insertRoot(ComponentInstance root) {
+        evaluationCache.insertEvalResult(root, 0.);
+        queue.add(root);
     }
 
     @Override

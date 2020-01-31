@@ -55,4 +55,22 @@ public class CIPhase1 extends CIIndexed {
     public void addRecord(InterfaceRefinementRecord refinementRecord) {
         refinementHistory.add(refinementRecord);
     }
+
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(super.equals(obj)) {
+            if(obj instanceof CIPhase1) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
 }

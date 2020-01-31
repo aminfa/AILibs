@@ -5,4 +5,11 @@ dependencies {
 	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8'
 
 	testCompile project(path: ':JAICore:jaicore-basic', configuration: 'testArtifacts')
+
+    // mandatory dependencies for using Spock
+    compile "org.codehaus.groovy:groovy-all:2.5.8"
+    testCompile platform("org.spockframework:spock-bom:2.0-M1-groovy-2.5")
+    testCompile "org.spockframework:spock-core"
+    testCompile "org.spockframework:spock-junit4" // you can remove this if your code does not rely on old JUnit 4 rules
+
 }

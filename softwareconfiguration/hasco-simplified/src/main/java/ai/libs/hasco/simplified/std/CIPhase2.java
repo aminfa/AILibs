@@ -123,11 +123,31 @@ public class CIPhase2 extends CIIndexed {
     }
 
     public ParamRefinementRecord getNextParamToBeRefined() {
-        return paramOrder.get(nextParamIndex);
+        return getParamOrder().get(nextParamIndex);
     }
 
     public void nextParameter() {
-        nextParamIndex++;
+        nextParamIndex = (nextParamIndex + 1)  % getParamOrder().size();
     }
 
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(super.equals(obj)) {
+            if(obj instanceof CIPhase2) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    public int getParamIndex() {
+        return nextParamIndex;
+    }
 }

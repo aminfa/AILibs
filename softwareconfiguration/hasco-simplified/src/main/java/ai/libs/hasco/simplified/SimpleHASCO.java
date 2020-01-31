@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.*;
 
 public class SimpleHASCO {
 
@@ -29,6 +28,8 @@ public class SimpleHASCO {
         this.refiner = refiner;
     }
 
+
+
     /**
      * Processes the given candidate. It is assumed that it was taken from the open list. <br>
      * The candidate is refined and if necessary, the refined component instances are sampled and evaluated. <br>
@@ -43,7 +44,7 @@ public class SimpleHASCO {
         List<ComponentInstance> refinements = refiner.refine(prototype);
         Objects.requireNonNull(refinements, "Refiner returned null. Instead return empty list.");
         for(ComponentInstance refinedComponent : refinements) {
-            if (closedList.isClosed(refinedComponent)) {
+            if (!closedList.isClosed(refinedComponent)) {
                 List<ComponentInstance> samples = sampler.drawSamples(refinedComponent);
                 List<Optional<Double>> results = new ArrayList<>(samples.size());
                 for (ComponentInstance sample : samples) {
@@ -92,7 +93,15 @@ public class SimpleHASCO {
         }
     }
 
-//    public void runInParallel(int numberOfThreads) throws InterruptedException, ExecutionException {
+    public OpenList getOpenList() {
+        return openList;
+    }
+
+    public ClosedList getClosedList() {
+        return closedList;
+    }
+
+    //    public void runInParallel(int numberOfThreads) throws InterruptedException, ExecutionException {
 //        if(numberOfThreads <= 1) {
 //            runSequentially();
 //            return;

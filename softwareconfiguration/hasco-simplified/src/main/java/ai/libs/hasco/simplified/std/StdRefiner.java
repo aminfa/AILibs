@@ -57,11 +57,15 @@ public class StdRefiner implements ComponentRefiner {
     private List<ComponentInstance> refineParameters(CIPhase2 componentInstance) {
         boolean done = false;
         RefinementProcess process = new RefinementProcess(componentInstance);
+        int startingIndex = componentInstance.getParamIndex();
         while(!done) {
             ParamRefinementRecord paramRefinement = componentInstance.getNextParamToBeRefined();
             process.setComponentToBeRefined(componentInstance.getComponentByPath(paramRefinement.getComponentPath()));
             done =  process.refineParameter(paramRefinement.getParamName(), agent);
             componentInstance.nextParameter();
+            if(!done && startingIndex == componentInstance.getParamIndex()) {
+                return Collections.emptyList();
+            }
         }
         boolean nonPhaseTwoRefinementsPresent = process.getRefinements().stream()
                 .anyMatch(r -> !(r instanceof CIPhase2));
@@ -74,10 +78,12 @@ public class StdRefiner implements ComponentRefiner {
 
 
     private List<ComponentInstance> refineComponents(CIPhase1 base) {
-        RefinementProcess process = new RefinementProcess(base);
         List<String> path = dfsUnprovidedInterfaces(base);
+        List<ComponentInstance> refinements = new ArrayList<>();
         if(path.isEmpty()) {
-            return Collections.emptyList();
+            CIPhase2 phase2 = new CIPhase2(base);
+            refinements.add(phase2);
+            return refinements;
         }
         String[] refinedComponentPath = path.toArray(new String[0]);
         String interfaceName = path.remove(path.size() - 1);
@@ -91,7 +97,6 @@ public class StdRefiner implements ComponentRefiner {
         if(providersOf.isEmpty()) {
             return Collections.emptyList();
         }
-        List<ComponentInstance> refinements = new ArrayList<>();
         for (Component provider : providersOf) {
             CIPhase1 newBase = new CIPhase1(base);
             Integer index = newBase.allocateNextIndex();
