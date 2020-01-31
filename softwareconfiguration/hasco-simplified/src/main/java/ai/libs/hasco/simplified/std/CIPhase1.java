@@ -1,4 +1,4 @@
-package ai.libs.hasco.simplified.impl;
+package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.ComponentInstance;
@@ -11,28 +11,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  *
  */
-public class RootComponentInstance extends IndexedComponentInstance {
+public class CIPhase1 extends IndexedComponentInstance implements RoutableCI {
 
-    private final static Logger logger = LoggerFactory.getLogger(RootComponentInstance.class);
+    private static final String[] ROOT_PATH = new String[0];
 
-    private final List<ComponentRefinementRecord> refinementHistory;
+    private final static Logger logger = LoggerFactory.getLogger(CIPhase1.class);
+
+    private final List<ComponentInterfaceRefinementRecord> refinementHistory;
 
     private AtomicInteger nextFreeId;
 
-    private RootComponentInstance(Component component, Map<String, String> parameterValues, Map<String, ComponentInstance> satisfactionOfRequiredInterfaces) {
-        super(component, parameterValues, satisfactionOfRequiredInterfaces, 0);
+    private CIPhase1(Component component, Map<String, String> parameterValues, Map<String, ComponentInstance> satisfactionOfRequiredInterfaces) {
+        super(component,
+                Collections.emptyMap(),
+                satisfactionOfRequiredInterfaces, 0);
         nextFreeId = new AtomicInteger(1);
         refinementHistory = Collections.EMPTY_LIST;
     }
 
-    public static RootComponentInstance createRoot(Component component) {
+    public static CIPhase1 createRoot(Component component) {
         logger.info("Creating root component instance of {}.", component.getName());
-        return new RootComponentInstance(component, new HashMap<>(), new HashMap<>());
+        return new CIPhase1(component, new HashMap<>(), new HashMap<>());
     }
 
-
-
-    public RootComponentInstance(RootComponentInstance baseComponent) {
+    public CIPhase1(CIPhase1 baseComponent) {
         super(baseComponent.getComponent(),
                 new HashMap<>(baseComponent.getParameterValues()),
                 new HashMap<>(baseComponent.getSatisfactionOfRequiredInterfaces()), // deep copy comes later
@@ -44,7 +46,7 @@ public class RootComponentInstance extends IndexedComponentInstance {
         performDeepCopy(baseComponent);
     }
 
-    private void performDeepCopy(RootComponentInstance baseComponent) {
+    private void performDeepCopy(CIPhase1 baseComponent) {
         Deque<IndexedComponentInstance> copyWaitingList = new LinkedList<>();
         Map<Integer, IndexedComponentInstance> allCopies = new HashMap<>();
         allCopies.put(getIndex(), this);
@@ -68,12 +70,12 @@ public class RootComponentInstance extends IndexedComponentInstance {
                 Integer index = ((IndexedComponentInstance) componentInstance).getIndex();
                 copiedInstance = allCopies.get(index);
                 if(copiedInstance == null) {
-                    if(componentInstance instanceof ChildComponentInstance)
-                        copiedInstance = new ChildComponentInstance(componentInstance.getComponent(),
+                    if(componentInstance instanceof CIChild)
+                        copiedInstance = new CIChild(componentInstance.getComponent(),
                                 new HashMap<>(componentInstance.getParameterValues()),
                                 new HashMap<>(componentInstance.getSatisfactionOfRequiredInterfaces()),
                                 index,
-                                ((ChildComponentInstance) componentInstance).getPath()
+                                ((CIChild) componentInstance).getPath()
                                 );
                     else
                         throw new IllegalStateException("A component instance has an unrecognized type: "
@@ -88,12 +90,12 @@ public class RootComponentInstance extends IndexedComponentInstance {
 
     }
 
-
-
-    public List<ComponentRefinementRecord> getRefinementHistory() {
+    public List<ComponentInterfaceRefinementRecord> getRefinementHistory() {
         return refinementHistory;
     }
 
-
-
+    @Override
+    public String[] getPath() {
+        return ROOT_PATH;
+    }
 }

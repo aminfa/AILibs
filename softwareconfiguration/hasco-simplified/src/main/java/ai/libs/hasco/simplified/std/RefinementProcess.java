@@ -1,4 +1,4 @@
-package ai.libs.hasco.simplified.impl;
+package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.*;
 import org.slf4j.Logger;

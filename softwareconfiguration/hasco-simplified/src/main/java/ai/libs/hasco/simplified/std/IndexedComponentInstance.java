@@ -1,11 +1,11 @@
-package ai.libs.hasco.simplified.impl;
+package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.ComponentInstance;
 
 import java.util.Map;
 
-public class IndexedComponentInstance extends ComponentInstance {
+public class IndexedComponentInstance extends ComponentInstance implements IndexedCI {
 
     private final Integer index;
 

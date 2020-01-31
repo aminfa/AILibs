@@ -1,8 +1,7 @@
-package ai.libs.hasco.simplified.impl;
+package ai.libs.hasco.simplified.std;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class IncrementalMap<K, V> implements Map<K,V> {
@@ -64,7 +63,7 @@ public class IncrementalMap<K, V> implements Map<K,V> {
     }
 
     @Override
-    public void putAll(@NotNull Map<? extends K, ? extends V> m) {
+    public void putAll(Map<? extends K, ? extends V> m) {
         m.forEach(this::put);
     }
 
@@ -73,7 +72,6 @@ public class IncrementalMap<K, V> implements Map<K,V> {
         throw new IllegalStateException("Cannot clear this implementation of the map.");
     }
 
-    @NotNull
     @Override
     public Set<K> keySet() {
         Set<K> union = new HashSet<>(baseMap.keySet());
@@ -81,7 +79,6 @@ public class IncrementalMap<K, V> implements Map<K,V> {
         return union;
     }
 
-    @NotNull
     @Override
     public Collection<V> values() {
         Collection<V> collection = new ArrayList<>(baseMap.values());
@@ -89,7 +86,6 @@ public class IncrementalMap<K, V> implements Map<K,V> {
         return collection;
     }
 
-    @NotNull
     @Override
     public Set<Entry<K, V>> entrySet() {
         Set<Entry<K, V>> union = new HashSet<>(baseMap.entrySet());

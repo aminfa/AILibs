@@ -166,9 +166,9 @@ public class ComponentUtil {
 		return numCandidates;
 	}
 
-	public ComponentInstance getRandomParametrization(final ComponentInstance componentInstance, final Random rand) {
+	public static ComponentInstance getRandomParametrization(final ComponentInstance componentInstance, final Random rand) {
 		ComponentInstance randomParametrization = randomParameterizationOfComponent(componentInstance.getComponent(), rand);
-		componentInstance.getSatisfactionOfRequiredInterfaces().entrySet().forEach(x -> randomParametrization.getSatisfactionOfRequiredInterfaces().put(x.getKey(), this.getRandomParametrization(x.getValue(), rand)));
+		componentInstance.getSatisfactionOfRequiredInterfaces().forEach((key, value) -> randomParametrization.getSatisfactionOfRequiredInterfaces().put(key, getRandomParametrization(value, rand)));
 		return randomParametrization;
 	}
 

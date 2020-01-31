@@ -1,4 +1,4 @@
-package ai.libs.hasco.simplified.impl;
+package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.simplified.ClosedList;
@@ -8,13 +8,13 @@ import ai.libs.hasco.simplified.OpenList;
 
 import java.util.*;
 
-public class BestFirstList implements ClosedList, OpenList {
+public class BFSCandidateContainer implements ClosedList, OpenList {
 
     private final PriorityQueue<ComponentInstance> queue;
 
     private final EvaluationCache evaluationCache;
 
-    public BestFirstList(ComponentRegistry registry) {
+    public BFSCandidateContainer(ComponentRegistry registry) {
         this.evaluationCache = new EvaluationCache();
         this.queue = new PriorityQueue<>(evaluationCache);
     }

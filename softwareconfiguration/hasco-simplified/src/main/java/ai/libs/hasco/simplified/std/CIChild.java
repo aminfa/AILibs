@@ -1,11 +1,11 @@
-package ai.libs.hasco.simplified.impl;
+package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.ComponentInstance;
 
 import java.util.Map;
 
-public class ChildComponentInstance extends IndexedComponentInstance {
+public class CIChild extends IndexedComponentInstance implements RoutableCI {
 
     private final String[] path;
 
@@ -17,7 +17,7 @@ public class ChildComponentInstance extends IndexedComponentInstance {
      * @param componentIndex
      * @param path
      */
-    public ChildComponentInstance(Component component, Map<String, String> parameterValues, Map<String, ComponentInstance> satisfactionOfRequiredInterfaces, Integer componentIndex, String[] path) {
+    public CIChild(Component component, Map<String, String> parameterValues, Map<String, ComponentInstance> satisfactionOfRequiredInterfaces, Integer componentIndex, String[] path) {
         super(component, parameterValues, satisfactionOfRequiredInterfaces, componentIndex);
         this.path = path;
     }

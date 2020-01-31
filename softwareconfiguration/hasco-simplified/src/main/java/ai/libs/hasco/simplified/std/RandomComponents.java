@@ -1,4 +1,4 @@
-package ai.libs.hasco.simplified.impl;
+package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.model.NumericParameterDomain;
@@ -8,14 +8,11 @@ import ai.libs.hasco.simplified.ComponentRefiner;
 import ai.libs.hasco.simplified.ComponentRegistry;
 import scala.xml.PrettyPrinter;
 
-import java.lang.reflect.MalformedParameterizedTypeException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
 
-import static ai.libs.hasco.simplified.impl.RandomUtil.*;
+import static ai.libs.hasco.simplified.std.RandomUtil.*;
 
 public class RandomComponents implements ComponentInstanceSampler, ComponentRefiner {
 

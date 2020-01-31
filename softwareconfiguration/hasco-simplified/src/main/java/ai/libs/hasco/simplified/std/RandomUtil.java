@@ -1,4 +1,4 @@
-package ai.libs.hasco.simplified.impl;
+package ai.libs.hasco.simplified.std;
 
 import java.util.function.Supplier;
 
@@ -10,6 +10,12 @@ public class RandomUtil {
 
     public static int decideBetween(Supplier<Double> numberGenerator, int choiceCount) {
         return (int)(choiceCount*numberGenerator.get());
+    }
+
+    public static String[][] getParamRefinementOrder() {
+
+
+
     }
 
 }

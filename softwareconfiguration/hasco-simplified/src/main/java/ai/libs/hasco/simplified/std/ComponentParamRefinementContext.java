@@ -1,19 +1,16 @@
-package ai.libs.hasco.simplified.impl;
+package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.CategoricalParameterDomain;
 import ai.libs.hasco.model.ComponentInstance;
-import ai.libs.hasco.model.IParameterDomain;
 import ai.libs.hasco.model.Parameter;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class ComponentParamRefinementContext {
 
     private ComponentInstance component;
 
-    private List<ComponentRefinementRecord> list = new ArrayList<>();
+    private List<ComponentInterfaceRefinementRecord> list = new ArrayList<>();
 
     public ComponentParamRefinementContext(ComponentInstance component) {
         this.component = component;
@@ -38,6 +35,6 @@ public class ComponentParamRefinementContext {
             throw new IllegalArgumentException(
                     String.format("Index %d is out of bound of categories: %s", index, Arrays.toString(categories)));
         }
-        
+        HashSet set = null;
     }
 }
