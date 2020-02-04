@@ -1,4 +1,4 @@
-package ai.libs.hasco.simplified;
+package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.ComponentInstance;
 

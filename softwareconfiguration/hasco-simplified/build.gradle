@@ -7,9 +7,20 @@ dependencies {
 	testCompile project(path: ':JAICore:jaicore-basic', configuration: 'testArtifacts')
 
     // mandatory dependencies for using Spock
-    compile "org.codehaus.groovy:groovy-all:2.5.8"
+    testCompile "org.codehaus.groovy:groovy-all:2.5.8"
     testCompile platform("org.spockframework:spock-bom:2.0-M1-groovy-2.5")
     testCompile "org.spockframework:spock-core"
-    testCompile "org.spockframework:spock-junit4" // you can remove this if your code does not rely on old JUnit 4 rules
 
+    // Logging libraries
+    testCompile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.0'
+    testCompile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.0'
+    testCompile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.0'
+
+}
+sourceSets {
+    test {
+        java {
+            srcDir 'src/test/resources'
+        }
+    }
 }

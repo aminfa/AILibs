@@ -7,14 +7,14 @@ import ai.libs.hasco.model.Parameter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class CIPhase2 extends CIIndexed {
+public class CIPhase2 extends CIIndexed implements Iterable<ParamRefinementRecord> {
 
 
     private final CIPhase1 ciPhase1Parent; // TODO remove reference to parent if it isn't needed
 
     private List<ParamRefinementRecord> paramOrder;
 
-    private int nextParamIndex;
+    private final int nextParamIndex;
 
     /**
      * Constructor for creating a <code>ComponentInstance</code> for a particular <code>Component</code>.
@@ -23,10 +23,19 @@ public class CIPhase2 extends CIIndexed {
      * @param satisfactionOfRequiredInterfaces
      * @param nextParamIndex
      */
-    private CIPhase2(Component component, Map<String, String> parameterValues, Map<String, ComponentInstance> satisfactionOfRequiredInterfaces, CIPhase1 ciPhase1Parent, Integer index, int nextParamIndex) {
+    private CIPhase2(Component component,
+                     Map<String, String> parameterValues, Map<String, ComponentInstance> satisfactionOfRequiredInterfaces,
+                     CIPhase1 ciPhase1Parent, Integer index,
+                     List<ParamRefinementRecord> paramOrder, int nextParamIndex) {
         super(component, parameterValues, satisfactionOfRequiredInterfaces, index);
+        this.paramOrder = paramOrder;
         this.ciPhase1Parent = Objects.requireNonNull(ciPhase1Parent);
-        this.nextParamIndex = nextParamIndex;
+        if(hasParameters()) {
+            this.nextParamIndex = nextParamIndex % getParamOrder().size();
+        }  else {
+            this.nextParamIndex = 0;
+        }
+
     }
 
     public CIPhase2(CIPhase1 ciPhase1Parent) {
@@ -34,7 +43,9 @@ public class CIPhase2 extends CIIndexed {
                 Collections.emptyMap(),
                 new HashMap<>(ciPhase1Parent.getSatisfactionOfRequiredInterfaces()),
                 ciPhase1Parent,
-                ciPhase1Parent.getIndex(), 0);
+                ciPhase1Parent.getIndex(),
+                null,
+                0);
         performDeepCopy();
     }
 
@@ -45,10 +56,11 @@ public class CIPhase2 extends CIIndexed {
                 new HashMap<>(ciPhase2Parent.getSatisfactionOfRequiredInterfaces()),
                 ciPhase2Parent.ciPhase1Parent,
                 ciPhase2Parent.getIndex(),
-                (ciPhase2Parent.nextParamIndex + 1) % ciPhase2Parent.getParamOrder().size());
-        this.paramOrder = ciPhase2Parent.getParamOrder();
+                ciPhase2Parent.getParamOrder(),
+                (ciPhase2Parent.nextParamIndex + 1));
         performDeepCopy();
     }
+
 
     protected List<ParamRefinementRecord> getParamOrder() {
         if(paramOrder == null) {
@@ -115,9 +127,15 @@ public class CIPhase2 extends CIIndexed {
 
     private static LinkedList<ParamRefinementRecord> drawParamRoundRobin(List<Deque<ParamRefinementRecord>> roundRobinList){
         LinkedList<ParamRefinementRecord> result = new LinkedList<>();
-        for (Deque<ParamRefinementRecord> queue : roundRobinList) {
-            if (!queue.isEmpty())
-                result.add(queue.pop());
+        boolean newEntry = true;
+        while(newEntry) {
+            newEntry = false;
+            for (Deque<ParamRefinementRecord> queue : roundRobinList) {
+                if (!queue.isEmpty()) {
+                    newEntry = true;
+                    result.add(queue.pop());
+                }
+            }
         }
         return result;
     }
@@ -126,9 +144,6 @@ public class CIPhase2 extends CIIndexed {
         return getParamOrder().get(nextParamIndex);
     }
 
-    public void nextParameter() {
-        nextParamIndex = (nextParamIndex + 1)  % getParamOrder().size();
-    }
 
     @Override
     public int hashCode() {
@@ -147,7 +162,54 @@ public class CIPhase2 extends CIIndexed {
         return false;
     }
 
-    public int getParamIndex() {
-        return nextParamIndex;
+    public Optional<ParamRefinementRecord> getNextRecord() {
+        if(hasParameters()) {
+            return Optional.of(iterator().next());
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public boolean hasParameters() {
+        return !getParamOrder().isEmpty();
+    }
+
+    @Override
+    public String displayText() {
+        return String.format("Phase2::%s[param count: %d]",
+                getComponent().getName(),
+                getParamOrder().size());
+    }
+
+    @Override
+    public Iterator<ParamRefinementRecord> iterator() {
+        return new Iterator<ParamRefinementRecord>() {
+            boolean startedLoop = false;
+
+            int paramCursor = nextParamIndex;
+
+            @Override
+            public boolean hasNext() {
+                if(!hasParameters()) {
+                    return false;
+                }
+                if(startedLoop) {
+                    // loop prevention
+                    return paramCursor != nextParamIndex;
+                }
+                return true;
+            }
+
+            @Override
+            public ParamRefinementRecord next() {
+                if(!hasNext()) {
+                    throw new IllegalStateException();
+                }
+                startedLoop = true;
+                ParamRefinementRecord record = getParamOrder().get(paramCursor);
+                paramCursor = (paramCursor + 1)  % getParamOrder().size();
+                return record;
+            }
+        };
     }
 }

@@ -1,6 +1,7 @@
-package ai.libs.hasco.simplified;
+package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.*;
+import ai.libs.hasco.simplified.RefinementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,16 +45,23 @@ public class RefinementProcess {
             logger.warn("{} - No component found for path: {}", displayName, componentPath, ex);
             return false;
         }
-        logger.debug("The next component to be refined is on path: {}", componentPath);
+        logger.trace("The next component to be refined is on path: {}", componentPath);
         this.nextComponentToBeRefined = (componentInstance);
         setDisplayName(String.format("Refinement of component %s > [%s]", componentPath, nextComponentToBeRefined.getComponent().getName()));
         return true;
     }
 
     public boolean setComponentToBeRefined(ComponentInstance nextComponentToBeRefined) {
+
         this.nextComponentToBeRefined = nextComponentToBeRefined;
-        logger.debug("The next component to be refined is a: {}", nextComponentToBeRefined.getComponent().getName());
-        setDisplayName(String.format("Refinement of component [%s]", nextComponentToBeRefined.getComponent().getName()));
+        logger.trace("The next component to be refined is a: {}", nextComponentToBeRefined.getComponent().getName());
+        if(nextComponentToBeRefined instanceof CIIndexed)
+            setDisplayName(
+                    String.format("Refinement of %s", ((CIIndexed) nextComponentToBeRefined).displayText())
+            );
+        else
+            setDisplayName(String.format("Refinement of component [%s]", nextComponentToBeRefined.getComponent().getName()));
+
         return true;
     }
 
@@ -74,7 +82,7 @@ public class RefinementProcess {
     }
 
     public boolean refineRequiredInterface(String requiredInterfaceId,
-                                           RefinementAgent refiner) {
+                                           RefinementService refiner) {
         assertInitialized();
         List<ComponentInstance> children = new ArrayList<>();
         Component baseComponent = nextComponentToBeRefined.getComponent();
@@ -113,7 +121,7 @@ public class RefinementProcess {
     }
 
     public boolean refineParameter(String paramName,
-                                   RefinementAgent refiner) {
+                                   RefinementService refiner) {
         assertInitialized();
 
         List<ComponentInstance> children = new ArrayList<>();
@@ -126,11 +134,11 @@ public class RefinementProcess {
         String parameterValue = nextComponentToBeRefined.getParameterValue(paramToBeRefined);
         boolean refinementDone = false;
         if (paramToBeRefined.isNumeric()) {
-            refinementDone = refinementDone = refiner.refineNumericalParameter(children, base,
+            refinementDone = refiner.refineNumericalParameter(children, base,
                     nextComponentToBeRefined,
                     (NumericParameterDomain) paramToBeRefined.getDefaultDomain(), paramName, parameterValue);
         } else if (paramToBeRefined.isCategorical()) {
-            refinementDone = refinementDone = refiner.refineCategoricalParameter(children, base,
+            refinementDone = refiner.refineCategoricalParameter(children, base,
                     nextComponentToBeRefined,
                     (CategoricalParameterDomain) paramToBeRefined.getDefaultDomain(), paramName, parameterValue);
         } else {

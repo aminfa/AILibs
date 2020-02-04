@@ -2,8 +2,6 @@ package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.simplified.ClosedList;
-import ai.libs.hasco.simplified.ComponentRegistry;
-import ai.libs.hasco.simplified.EvaluationCache;
 import ai.libs.hasco.simplified.OpenList;
 
 import java.util.*;
@@ -56,4 +54,7 @@ public class StdCandidateContainer implements ClosedList, OpenList {
         return queue.poll();
     }
 
+    public PriorityQueue<ComponentInstance> getQueue() {
+        return queue;
+    }
 }

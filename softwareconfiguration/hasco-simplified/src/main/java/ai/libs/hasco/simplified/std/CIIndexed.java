@@ -38,6 +38,15 @@ public class CIIndexed extends ComponentInstance {
     public String[] getPath() {
         return path;
     }
+
+
+    public String displayText() {
+        return String.format("%s[id: %d] :: %s",
+                Arrays.toString(path),
+                index,
+                getComponent().getName());
+    }
+
     /*
      * TODO move the following methods to a CIBase class which is a parent of the two phases
      */
@@ -80,22 +89,59 @@ public class CIIndexed extends ComponentInstance {
                 satMap.put(requiredInterface, copiedInstance);
             }
         }
-
     }
 
-    public ComponentInstance getComponentByPath(String[] path) {
-        Map<String, ComponentInstance> providers = getSatisfactionOfRequiredInterfaces();
-        ComponentInstance result = this;
-        for (int i = 0; i < path.length; i++) {
-            String interfaceName = path[i];
-            ComponentInstance componentInstance = providers.get(interfaceName);
-            if(componentInstance == null) {
-                throw new IllegalArgumentException("Couldn't find component with path: " + Arrays.toString(path) +
-                        ". reached " + i);
-            }
-            providers = componentInstance.getSatisfactionOfRequiredInterfaces();
-            result = componentInstance;
+    public ComponentInstance getComponentByPath(String[] pathArr) {
+        return getComponentByPath(Arrays.stream(pathArr).iterator());
+    }
+
+    public ComponentInstance getComponentByPath(Iterable<String> componentPath) {
+        return getComponentByPath(componentPath.iterator());
+    }
+
+    public ComponentInstance getComponentByPath(Iterator<String> componentPath) {
+        if(componentPath == null) {
+            return this;
         }
-        return result;
+        ComponentInstance current = this, prev = null;
+        while(componentPath.hasNext()) {
+            String requiredInterfaceName = componentPath.next();
+            prev = current;
+            current = getSatisfyingComponent(prev, requiredInterfaceName);
+            if(current == null) {
+                if(prev.getComponent().getRequiredInterfaces().containsKey(requiredInterfaceName))
+                    throw new IllegalArgumentException("ComponentInstance with path" + componentPath + " not found.\n" +
+                            "Component Instance " + prev.getComponent().getName()
+                            + " doesn't have the required interface called: " + requiredInterfaceName +
+                            " satisfied.");
+                else
+                    throw new IllegalArgumentException("ComponentInstance with path" + componentPath + " not found.\n" +
+                            "Component Instance " + prev.getComponent().getName()
+                            + " doesn't have a required interface called: " + requiredInterfaceName);
+            }
+        }
+        return current;
+    }
+
+//    public ComponentInstance getComponentByPath(String[] path) {
+//        Map<String, ComponentInstance> providers = getSatisfactionOfRequiredInterfaces();
+//        ComponentInstance result = this;
+//        for (int i = 0; i < path.length; i++) {
+//            String interfaceName = path[i];
+//            ComponentInstance componentInstance = providers.get(interfaceName);
+//            if(componentInstance == null) {
+//                throw new IllegalArgumentException("Couldn't find component with path: " + Arrays.toString(path) +
+//                        ". reached " + i);
+//            }
+//            providers = componentInstance.getSatisfactionOfRequiredInterfaces();
+//            result = componentInstance;
+//        }
+//        return result;
+//    }
+
+
+    private ComponentInstance getSatisfyingComponent(ComponentInstance base, String requiredInterfaceName) {
+        ComponentInstance component = base.getSatisfactionOfRequiredInterfaces().get(requiredInterfaceName);
+        return component;
     }
 }

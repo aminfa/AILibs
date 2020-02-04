@@ -5,21 +5,25 @@ import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.model.NumericParameterDomain;
 import ai.libs.hasco.simplified.ComponentRegistry;
-import ai.libs.hasco.simplified.RefinementAgent;
+import ai.libs.hasco.simplified.RefinementService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 
-public class StdRefinementAgent implements RefinementAgent {
+public class StdRefinementService implements RefinementService {
+
+    private final static Logger logger = LoggerFactory.getLogger(StdRefinementService.class);
 
     private final ComponentRegistry registry;
 
     private final static int NUM_SPLITS = 2;
     private final static int MIN_RANGE_SIZE = 2;
 
-    public StdRefinementAgent(ComponentRegistry registry) {
+    public StdRefinementService(ComponentRegistry registry) {
         this.registry = registry;
     }
 
@@ -120,7 +124,11 @@ public class StdRefinementAgent implements RefinementAgent {
 
 
     @Override
-    public boolean refineRequiredInterface(List<ComponentInstance> refinements, ComponentInstance base, ComponentInstance component,  String name, String requiredInterface) {
+    public boolean refineRequiredInterface(List<ComponentInstance> refinements,
+                                           ComponentInstance base,
+                                           ComponentInstance component,
+                                           String requiredInterfaceName,
+                                           String requiredInterface) {
         if(!( component instanceof CIIndexed) ) {
             throw new IllegalArgumentException("Component is not indexed");
         }
@@ -129,22 +137,25 @@ public class StdRefinementAgent implements RefinementAgent {
         }
         List<Component> providersOf = registry.getProvidersOf(requiredInterface);
         if(providersOf.isEmpty()) {
-            return false;
+            logger.warn("No component provides interface {}", requiredInterface);
+            return true;
         }
         for (Component provider : providersOf) {
+            /*
+             * Create a refinement for each provider:
+             */
             CIPhase1 newBase = new CIPhase1((CIPhase1) base);
             Integer index = newBase.allocateNextIndex();
-
 
             String[] parentPath = ((CIIndexed) component).getPath();
             ComponentInstance parent = newBase.getComponentByPath(parentPath);
 
             InterfaceRefinementRecord refinementRecord =
-                    InterfaceRefinementRecord.refineRequiredInterface(parentPath, name);
+                    InterfaceRefinementRecord.refineRequiredInterface(parentPath, requiredInterfaceName);
             CIIndexed newInstance = new CIIndexed(provider,
                     new HashMap<>(), new HashMap<>(),
                     index, refinementRecord.getInterfaceRefinementPath());
-            parent.getSatisfactionOfRequiredInterfaces().put(name, newInstance);
+            parent.getSatisfactionOfRequiredInterfaces().put(requiredInterfaceName, newInstance);
             newBase.addRecord(refinementRecord);
             refinements.add(newBase);
         }

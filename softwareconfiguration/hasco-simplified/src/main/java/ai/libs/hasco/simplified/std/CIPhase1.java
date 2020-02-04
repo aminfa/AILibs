@@ -63,6 +63,15 @@ public class CIPhase1 extends CIIndexed {
     }
 
     @Override
+    public String displayText() {
+        return String.format("Phase1::%s[comp count: %d]",
+                getComponent().getName(),
+                nextFreeId.get());
+    }
+
+
+
+    @Override
     public boolean equals(Object obj) {
         if(super.equals(obj)) {
             if(obj instanceof CIPhase1) {

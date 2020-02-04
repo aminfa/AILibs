@@ -6,7 +6,7 @@ import ai.libs.hasco.model.NumericParameterDomain;
 
 import java.util.List;
 
-public interface RefinementAgent {
+public interface RefinementService {
 
     boolean refineCategoricalParameter(List<ComponentInstance> refinements,
                                        ComponentInstance base, ComponentInstance component,
