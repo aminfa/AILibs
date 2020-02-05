@@ -1,4 +1,4 @@
-package ai.libs.hasco.simplified
+package ai.libs.hasco.simplified.std
 
 import ai.libs.hasco.model.Component
 import ai.libs.hasco.model.ComponentInstance
@@ -7,7 +7,7 @@ import ai.libs.hasco.simplified.std.CIPhase1
 import ai.libs.hasco.simplified.std.StdHASCO
 import spock.lang.Specification
 
-class SimpleHASCOTest extends Specification {
+class StdHASCOAbstractProblemsTest extends Specification {
 
     void setup() {
     }

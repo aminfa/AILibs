@@ -1,9 +1,9 @@
 package ai.libs.hasco.simplified.std;
 
-import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.simplified.ComponentRefiner;
 import ai.libs.hasco.simplified.ComponentRegistry;
+import ai.libs.hasco.simplified.RefinementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,10 +27,15 @@ public class StdRefiner implements ComponentRefiner {
 
     private final static Logger logger = LoggerFactory.getLogger(StdRefiner.class);
 
-    private final StdRefinementService refService;
+    private final RefinementService refService;
 
     public StdRefiner(ComponentRegistry registry) {
         this.refService = new StdRefinementService(registry);
+    }
+
+    // Used for testing
+    public StdRefiner(RefinementService refService) {
+        this.refService = refService;
     }
 
     @Override
@@ -88,7 +93,7 @@ public class StdRefiner implements ComponentRefiner {
 
 
     private List<ComponentInstance> refineComponents(CIPhase1 base) {
-        List<String> path = dfsUnprovidedInterfaces(base); // The last element is the interface name
+        List<String> path = BFSUnSatInterface(base); // The last element is the interface name
         if(path.isEmpty()) {
             /*
              * All the required interfaces of all component instances have been satisfied.
@@ -121,27 +126,53 @@ public class StdRefiner implements ComponentRefiner {
         return refinements;
     }
 
-    // TODO implement BFS
-    private List<String> dfsUnprovidedInterfaces(CIIndexed cursor) {
-        Map<String, ComponentInstance> providedIs = cursor.getSatisfactionOfRequiredInterfaces();
-        Map<String, String> requiredIs = cursor.getComponent().getRequiredInterfaces();
-        for (String interfaceName : requiredIs.keySet()) {
-            if(providedIs.containsKey(interfaceName) &&
-            providedIs.get(interfaceName) != null) {
+    // package private for testing purposes.
+
+    /**
+     * Searches the given component and all connected components for unsatisfied required interfaces.
+     * @param root The component instance to be searched from.
+     * @return the path to the required interface. If empty, all the required intefaces of all components have been satisfied.
+     */
+    static List<String> BFSUnSatInterface(CIIndexed root) {
+        Set<Integer> visitedNodes = new HashSet<>();
+        Deque<CIIndexed> queue = new LinkedList<>();
+        queue.add(root);
+
+        while(!queue.isEmpty()) {
+            CIIndexed cursor = queue.pop();
+            /*
+             * Check if the node has been visited yet, and if not mark it.
+             */
+            if(visitedNodes.contains(cursor.getIndex())) {
                 continue;
+            } else  {
+                visitedNodes.add(cursor.getIndex());
             }
-            // found a required interface:
-            List<String> path = new ArrayList<>(Arrays.asList(cursor.getPath()));
-            path.add(interfaceName);
-            return path;
-        }
-        // all interfaces are fullfilled:
-        for (ComponentInstance provider : providedIs.values()) {
-            List<String> path = dfsUnprovidedInterfaces((CIIndexed) provider);
-            if(!path.isEmpty()) {
-                return path;
+            Map<String, ComponentInstance> providedIs = cursor.getSatisfactionOfRequiredInterfaces();
+            Map<String, String> requiredIs = cursor.getComponent().getRequiredInterfaces();
+            /*
+             * Iterate over all required intefaces of the cursor
+             */
+            for (String interfaceName : requiredIs.keySet()) {
+                if(providedIs.containsKey(interfaceName) &&
+                        providedIs.get(interfaceName) != null) {
+                    /*
+                     * The required interface has been satisfied by a component instance.
+                     * Add the node to the queue:
+                     */
+                    queue.add((CIIndexed) providedIs.get(interfaceName));
+                } else {
+                    // found a required interface, that hasn't been satisfied yet.
+                    List<String> path = new ArrayList<>(Arrays.asList(cursor.getPath()));
+                    path.add(interfaceName);
+                    return path;
+                }
             }
         }
+        /*
+         * All required interfaces have been satisfied.
+         * The empty list that signals this state:
+         */
         return Collections.emptyList();
     }
 
