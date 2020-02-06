@@ -1,22 +1,26 @@
 package ai.libs.hasco.simplified.std;
 
+import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.ComponentInstance;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Allows parallel access.
  */
 public class EvaluationCache implements Comparator<ComponentInstance> {
 
-    private Map<ComponentInstance, Optional<Double>> evalResults = new HashMap<>();
+//    private Map<ComponentInstance, Optional<Double>> evalResults = new HashMap<>();
+    private Map<String, Optional<Double>> evalResults = new HashMap<>();
 
     private synchronized void inject(ComponentInstance ci, Double result) {
         Optional<Double> newResult = Optional.ofNullable(result);
-        Optional<Double> prevResult = evalResults.putIfAbsent(ci, newResult);
+        String componentHash = ComponentDigest.digest(ci);
+        Optional<Double> prevResult = evalResults.putIfAbsent(componentHash, newResult);
         if(prevResult != null) {
             String errText = String.format("The component instance, %s," +
                             " already has an eval result cached." +
@@ -27,9 +31,9 @@ public class EvaluationCache implements Comparator<ComponentInstance> {
                     ci.toString(),
                     resultToText(prevResult),
                     resultToText(newResult));
-            throw new IllegalArgumentException(errText);
+//            throw new IllegalArgumentException(errText);
         }
-        evalResults.put(ci, newResult);
+//        evalResults.put(componentHash, newResult);
     }
 
     private String resultToText(Optional<Double> result) {
@@ -48,17 +52,22 @@ public class EvaluationCache implements Comparator<ComponentInstance> {
     }
 
     public boolean containsResult(ComponentInstance ci) {
-        return evalResults.containsKey(ci);
+        return evalResults.containsKey(ComponentDigest.digest(ci));
+    }
+
+    public Optional<Double> retrieveResult(ComponentInstance sample) {
+        return evalResults.get(ComponentDigest.digest(sample));
     }
 
     private synchronized Optional<Double> readResult(ComponentInstance ci) {
         Objects.requireNonNull(ci);
-        if(!evalResults.containsKey(ci)) {
+        String componentHashVal = ComponentDigest.digest(ci);
+        if(!evalResults.containsKey(componentHashVal)) {
             // TODO - do we throw exception instead?
 //            throw new IllegalArgumentException("No result cached for: " + ci.toString());
             return Optional.empty();
         }
-        return evalResults.get(ci);
+        return evalResults.get(componentHashVal);
     }
 
     @Override
@@ -83,6 +92,5 @@ public class EvaluationCache implements Comparator<ComponentInstance> {
             }
         }
     }
-
 
 }

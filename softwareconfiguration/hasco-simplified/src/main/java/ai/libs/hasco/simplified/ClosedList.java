@@ -12,4 +12,12 @@ public interface ClosedList {
     void insert(ComponentInstance componentInstance,
                 List<ComponentInstance> witnesses,
                 List<Optional<Double>> results);
+
+    /**
+     *
+     * @param prototype
+     * @param sample
+     * @return Null if no entry is found, an empty optional if an error result was found, or optional of evaluation result
+     */
+    Optional<Optional<Double>> retrieve(ComponentInstance prototype, ComponentInstance sample);
 }

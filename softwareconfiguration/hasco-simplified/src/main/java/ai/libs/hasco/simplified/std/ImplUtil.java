@@ -1,7 +1,11 @@
 package ai.libs.hasco.simplified.std;
 
+import com.google.common.collect.Streams;
+
 import java.util.List;
+import java.util.Spliterator;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 class ImplUtil {
 
@@ -16,6 +20,5 @@ class ImplUtil {
         int i = decideBetween(numberGenerator, list.size());
         return list.get(i);
     }
-
 
 }

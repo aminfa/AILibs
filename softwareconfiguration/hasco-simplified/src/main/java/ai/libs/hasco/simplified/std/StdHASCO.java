@@ -243,5 +243,10 @@ public class StdHASCO {
             }
         }
 
+        @Override
+        public Optional<Optional<Double>> retrieve(ComponentInstance prototype, ComponentInstance sample) {
+            return getOpenList().retrieve(prototype, sample);
+        }
+
     }
 }

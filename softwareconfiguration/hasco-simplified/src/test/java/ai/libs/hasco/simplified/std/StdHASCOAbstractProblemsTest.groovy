@@ -1,21 +1,16 @@
 package ai.libs.hasco.simplified.std
 
-import ai.libs.hasco.model.Component
 import ai.libs.hasco.model.ComponentInstance
 import ai.libs.hasco.serialization.ComponentLoader
-import ai.libs.hasco.simplified.std.CIPhase1
-import ai.libs.hasco.simplified.std.StdHASCO
+import ai.libs.hasco.simplified.ComponentRegistry
 import spock.lang.Specification
 
+/**
+ * Applying the Std HASCO implementation to some abstract problem sets.
+ */
 class StdHASCOAbstractProblemsTest extends Specification {
 
-    void setup() {
-    }
-
-    void cleanup() {
-    }
-
-    def "test simple problem"() {
+    def "test simple problem with two components"() {
         def requiredInterfaceName = 'IFace'
         def compsFile = new File("testrsc/simpleproblemwithtwocomponents.json")
         def compsLoader = new ComponentLoader(compsFile)
@@ -32,14 +27,19 @@ class StdHASCOAbstractProblemsTest extends Specification {
         hasco.requiredInterface = requiredInterfaceName
         hasco.registry = compsRegistry
         hasco.evaluator = { componentInstance ->
+            /*
+             * The evaluator that is fed to HASCO.
+             * It guides to search towards a specific solution.
+             * At the end we will check if the solution has been found.
+             */
             double score = 1.0;
             // The best component is A (a=true, b=v1)
             def params = componentInstance.parameterValues
             if(componentInstance.component.name == 'A') {
                 if(params['a'] != 'true')
-                    score += 1.0
+                    score += 1.5
                 if(params['b'] != 'v1')
-                    score += 1.0
+                    score += 1.5
             } else {
                 // component B:
                 score += 1.0
@@ -47,7 +47,6 @@ class StdHASCOAbstractProblemsTest extends Specification {
             }
             return Optional.of(score)
         }
-        StdHASCO.BestCandidateCache bestCandidate = hasco.closedList
         hasco.init()
         def runner = hasco.runner
         def openList = hasco.openList
@@ -87,10 +86,14 @@ class StdHASCOAbstractProblemsTest extends Specification {
             Inspect best candidate found:
         """
         openList.queue.isEmpty()
-        hasco.bestSeenScore.get() == 1.0
         s.component.name == 'A'
         s.parameterValues['a'] == 'true'
         s.parameterValues['b'] == 'v1'
+        hasco.bestSeenScore.get() == 1.0
+    }
+
+    def "test difficult problem" () {
+
     }
 
 }
