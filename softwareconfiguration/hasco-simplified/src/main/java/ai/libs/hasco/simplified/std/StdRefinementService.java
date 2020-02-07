@@ -9,9 +9,12 @@ import ai.libs.hasco.simplified.RefinementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 
 public class StdRefinementService implements RefinementService {
@@ -19,6 +22,12 @@ public class StdRefinementService implements RefinementService {
     private final static Logger logger = LoggerFactory.getLogger(StdRefinementService.class);
 
     private final ComponentRegistry registry;
+
+    private final static DecimalFormat DECIMAL_FORMATTER;
+    static  {
+        DECIMAL_FORMATTER = (DecimalFormat) NumberFormat.getNumberInstance(Locale.US);
+    }
+    // new DecimalFormat("###.####");
 
     private final static int NUM_SPLITS = 2;
     private final static int MIN_RANGE_SIZE = 2;
@@ -90,6 +99,10 @@ public class StdRefinementService implements RefinementService {
                 newRanges.add(String.valueOf((max + min) / 2.));
         }
         int splitCount = NUM_SPLITS;
+        // sc = 3
+        // diff = 3
+        // min range = 2
+        // 3 > 3/2 -> sc = 1
         if(splitCount > (diff/MIN_RANGE_SIZE)) {
             splitCount = (int) (diff/MIN_RANGE_SIZE);
         }
@@ -101,12 +114,13 @@ public class StdRefinementService implements RefinementService {
         }
         double splitPart = diff / splitCount;
         for (int i = 0; i < splitCount; i++) {
-            double newMin = i * splitPart;
-            double newMax = (i +1) * splitPart;
+            double newMin = i * splitPart + min;
+            double newMax = (i +1) * splitPart + min;
             if( newMax - newMin < MIN_RANGE_SIZE) {
                 newRanges.add(String.valueOf((int)newMin));
             } else {
-                newRanges.add(String.format("[%f, %f]", newMin, newMax));
+                newRanges.add(String.format("[%s, %s]", DECIMAL_FORMATTER.format(newMin),
+                        DECIMAL_FORMATTER.format(newMax)));
             }
         }
         if(newRanges.isEmpty()) {
