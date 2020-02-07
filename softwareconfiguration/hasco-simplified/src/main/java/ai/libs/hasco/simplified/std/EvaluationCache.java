@@ -93,4 +93,7 @@ public class EvaluationCache implements Comparator<ComponentInstance> {
         }
     }
 
+    public int getSize() {
+        return evalResults.size();
+    }
 }

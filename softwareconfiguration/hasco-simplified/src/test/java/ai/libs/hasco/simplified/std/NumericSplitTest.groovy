@@ -177,6 +177,7 @@ class NumericSplitTest extends Specification {
         0.0        | 10.0       | 3          | 1.0
         0.0        | 10.0       | 5          | 1.0
         0.0        | 10.0       | 4          | 0.5
+        0.0        | 10.0       | 10         | 0.0
 
         10.0       | 100.0      | 3          | 0.0
         10.0       | 100.0      | 3          | 10.0
@@ -206,6 +207,7 @@ class NumericSplitTest extends Specification {
                     [it * 2.0, (it + 1) * 2.0]
                 },
                 [[0.000000, 2.500000], [2.500000, 5.000000], [5.000000, 7.500000], [7.500000, 10.000000]],
+                (0..9),
 
                 [
                         [10.0, 40.0],
@@ -258,6 +260,17 @@ class NumericSplitTest extends Specification {
 
         then:
         numSplit.splits == [4, 15].collect {convertToString(it, false)}
+
+
+        when:
+        numSplit = new NumericSplit("[0, 10]", true, 0.0,0.0)
+        numSplit.configureSplits(10, 0.0)
+        numSplit.createSplits()
+
+        then:
+        numSplit.splits == (0..9).collect {convertToString(it, false)}
+
+
     }
 
     def "test error init"() {

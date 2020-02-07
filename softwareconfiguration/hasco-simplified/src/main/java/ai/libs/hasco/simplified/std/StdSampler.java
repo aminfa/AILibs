@@ -122,12 +122,51 @@ public class StdSampler implements ComponentInstanceSampler {
             String name = param.getName();
             String val = values.get(name);
             String newVal;
-            if(val == null) {
-                newVal = selectRandomValue(param);
-            } else {
-                newVal = selectFromValue(param, val);
+            if(param.isNumeric()) {
+                /*
+                 * Draw numeric value from splits
+                 */
+                newVal = drawRandomValueFromSplits(instance.getComponent(), param, val);
+            } else{
+                if(val == null) {
+                    newVal = selectRandomValue(param);
+                } else {
+                    newVal = selectFromValue(param, val);
+                }
             }
             values.put(name, newVal);
+        }
+    }
+
+    private String drawRandomValueFromSplits(Component component, Parameter param, String currentVal) {
+        NumericSplit ns = new NumericSplit(currentVal, (NumericParameterDomain) param.getDefaultDomain());
+        if(ns.isValueFixed()) {
+            // already fixed:
+            return String.valueOf(ns.getFixedVal());
+        } else {
+            Optional<ParameterRefinementConfiguration> paramRefConfigOpt = registry.getParamRefConfig(component, param);
+            double minSplitSize;
+            int splitCount;
+            if(paramRefConfigOpt.isPresent()) {
+                minSplitSize = paramRefConfigOpt.get().getIntervalLength();
+                splitCount = paramRefConfigOpt.get().getRefinementsPerStep();
+            } else {
+                // TODO defaults are hardcoded:
+                minSplitSize = 2.0;
+                splitCount = 2;
+            }
+            ns.configureSplits(splitCount, minSplitSize);
+            ns.setComponentName(component.getName());
+            ns.setParamName(param.getName());
+            ns.createValues();
+            List<String> splits = ns.getSplits();
+            if(splits.isEmpty()) {
+                logger.warn("Couldn't create split random draws: {}/{}/{}. " +
+                        "\nFalling back to random draw.", ns.getPreSplitRange(), splitCount, minSplitSize);
+                return selectRandomValue(param);
+            }
+            String randomParamValue = splits.get((int) (splits.size() * ng.get()));
+            return randomParamValue;
         }
     }
 

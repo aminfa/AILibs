@@ -5,6 +5,8 @@ import ai.libs.hasco.serialization.ComponentLoader
 import ai.libs.hasco.simplified.ComponentRegistry
 import spock.lang.Specification
 
+import java.util.concurrent.atomic.AtomicInteger
+
 /**
  * Applying the Std HASCO implementation to some abstract problem sets.
  */
@@ -98,6 +100,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         def compsLoader = new ComponentLoader(compsFile)
         def compsRegistry = ComponentRegistry.fromComponentLoader(compsLoader)
         def seed = 1L
+        def evalCounter = new AtomicInteger(0);
 
         when:
         StdHASCO hasco = new StdHASCO()
@@ -105,6 +108,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         hasco.requiredInterface = requiredInterface
         hasco.registry = compsRegistry
         hasco.evaluator = { componentInstance ->
+            evalCounter.incrementAndGet()
             /*
              * The evaluator that is fed to HASCO.
              * It guides to search towards a specific solution.
@@ -122,7 +126,6 @@ class StdHASCOAbstractProblemsTest extends Specification {
                     score += 0.5
                 else if(Double.parseDouble(params['a3']) <= 9.0)
                     score += 1.0
-                score += 0.5
                 if(Double.parseDouble(params['a4']) >= 5.0)
                     score += 0.5
                 else if(Double.parseDouble(params['a4']) >= 9.0)
@@ -162,9 +165,39 @@ class StdHASCOAbstractProblemsTest extends Specification {
         }
 
         when:
-        runner.runSequentially()
-        def s = hasco.bestSeenCandidate.get()
+        int steps = 0;
+        int bestSolutionFoundAt = 0
+        boolean solutionFound = false
+        int highestQueueSize = 0;
+        int bestSolutionStepCacheSize = 0;
+        int bestSolutionStepEvalCount = 0;
+        while(runner.step()) {
+            def queueSize = openList.queue.size()
+            println("QUEUE SIZE IS: ${queueSize}")
+            if(queueSize > highestQueueSize)
+                highestQueueSize = queueSize
+            steps++;
+            if(!solutionFound) {
+                def score = hasco.bestSeenScore
+                if(score.isPresent()) {
+                    if(score.get() == 1.0) {
+                        bestSolutionFoundAt = steps;
+                        solutionFound = true
+                        bestSolutionStepCacheSize = openList.cacheSize
+                        bestSolutionStepEvalCount = evalCounter.get()
+                    }
+                }
+            }
+        }
+        println("The entire search space was searched in ${steps} many steps.\n" +
+                "The number of evaluations are: ${evalCounter.get()}.\n" +
+                "The cache size is: ${openList.cacheSize}");
+        println("The queue reached a maximum size of ${highestQueueSize}.")
+        println("The solution was found at step ${bestSolutionFoundAt}, " +
+                "the first ${((double)bestSolutionFoundAt)/steps} %  of all steps.\n" +
+                "The solution was with ${bestSolutionStepEvalCount} evaluation with a cache size of ${bestSolutionStepCacheSize}")
 
+        def s = hasco.bestSeenCandidate.get();
         then:
         openList.queue.isEmpty()
         // A (a1=true, a2=v3, a3>=9.0, a4<=1.0, 5<=a5<=6)
@@ -179,3 +212,23 @@ class StdHASCOAbstractProblemsTest extends Specification {
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

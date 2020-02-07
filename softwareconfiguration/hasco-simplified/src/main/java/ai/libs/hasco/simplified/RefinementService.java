@@ -3,6 +3,7 @@ package ai.libs.hasco.simplified;
 import ai.libs.hasco.model.CategoricalParameterDomain;
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.model.NumericParameterDomain;
+import ai.libs.hasco.model.ParameterRefinementConfiguration;
 
 import java.util.List;
 

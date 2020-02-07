@@ -84,4 +84,8 @@ public class StdCandidateContainer implements ClosedList, OpenList {
     public PriorityQueue<ComponentInstance> getQueue() {
         return queue;
     }
+
+    public int getCacheSize() {
+        return evaluationCache.getSize();
+    }
 }

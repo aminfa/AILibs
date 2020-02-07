@@ -60,20 +60,20 @@ public class NumericSplit {
                 }
             }
         }
-        if(isIntegerFlag && max - min <= 1.0) {
-            Optional<Long> meanFixedVal = meanInteger(min, max);
-            if(meanFixedVal.isPresent()) {
-                fixedVal = meanFixedVal.get();
-            } else {
-                throw new IllegalArgumentException("The given range, " + currentRange + ",  doesn't contain an integer element.");
-            }
-            fixedValFlag = true;
-        } else if(min >= max) {
-            logger.warn("Min value is greater than max: {}", currentRange);
-            fixedVal = min;
-            fixedValFlag = true;
-        }
         if(!isValueFixed()) {
+            if(isIntegerFlag && max - min <= 1.0) {
+                Optional<Long> meanFixedVal = meanInteger(min, max);
+                if(meanFixedVal.isPresent()) {
+                    fixedVal = meanFixedVal.get();
+                } else {
+                    throw new IllegalArgumentException("The given range, " + currentRange + ",  doesn't contain an integer element.");
+                }
+                fixedValFlag = true;
+            } else if(min >= max) {
+                logger.warn("Min value is greater than max: {}", currentRange);
+                fixedVal = min;
+                fixedValFlag = true;
+            }
             diff = max - min;
         }
     }
@@ -123,8 +123,50 @@ public class NumericSplit {
     }
 
 
+    public void createValues() {
+        createSplits();
+        List<String> oldSplits = new ArrayList<>(splits);
+        splits.clear();
+        for (String split : oldSplits) {
+            Number value = null;
+            Matcher matcher = PATTERN_NUMERIC_RANGE.matcher(split);
+            if(matcher.matches()) {
+                double min = Double.parseDouble(matcher.group("num1"));
+                double max = Double.parseDouble(matcher.group("num2"));
+                if(isIntegerFlag) {
+                    Optional<Long> meanInt = meanInteger(min, max);
+                    if(meanInt.isPresent())
+                        value = meanInt.get();
+                } else {
+                    value = (min + max) / 2.0;
+                }
+            } else {
+                try {
+                    value = Double.parseDouble(split);
+                } catch(NumberFormatException ex) {
+                    logger.error("BUG: Couldn't parse outcome of createSplits: {} ", split, ex);
+                }
+            }
+            if(value != null) {
+                splits.add(numberToString(value));
+            }
+        }
+    }
+
+    private String numberToString(Number numb) {
+        if(isIntegerFlag) {
+            return String.valueOf(numb.longValue());
+        } else {
+            return String.format(Locale.US, "%f", numb.doubleValue());
+        }
+    }
+
     public void createSplits() {
         splits.clear();
+        if(isValueFixed()) {
+            splits.add(numberToString(getFixedVal()));
+            return;
+        }
         if(splitSize <= 0) {
             logger.warn("{}: no splits created as split size is {}", getDisplayText(), splitSize);
             return;
@@ -176,7 +218,7 @@ public class NumericSplit {
             logger.warn("Split of {}: Max value is larger than min: [{}, {}).",getDisplayText(),  min, max);
             max = min;
         }
-        if(diff/2. < minSplitSize || diff == 0.) {
+        if(diff/2. < minSplitSize || diff == 0. || (isIntegerFlag && diff < 2.0)) {
             /*
              * If half the difference is smaller than the current minSplitSize, then create a fixed value instead of the range.
              * We consider only half the diff,
@@ -198,7 +240,7 @@ public class NumericSplit {
                     return Optional.empty();
                 }
             } else {
-                String fixedSplitVal = String.format(Locale.US, "%f", mean);
+                String fixedSplitVal = numberToString(mean);
                 return Optional.of(fixedSplitVal);
             }
         } else if(isIntegerFlag && diff < 1.0) {
@@ -288,4 +330,9 @@ public class NumericSplit {
     int getSplitCount() {
         return splitCount;
     }
+
+    public String getPreSplitRange() {
+        return String.format("[%f, %f]", min, max);
+    }
+
 }

@@ -5,6 +5,7 @@ import ai.libs.hasco.simplified.RefinementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -125,24 +126,25 @@ public class RefinementProcess {
         assertInitialized();
 
         List<ComponentInstance> children = new ArrayList<>();
-        Component baseComponent = nextComponentToBeRefined.getComponent();
-        Parameter paramToBeRefined = baseComponent.getParameterWithName(paramName);
+        Component componentType = nextComponentToBeRefined.getComponent();
+        Parameter paramToBeRefined = componentType.getParameterWithName(paramName);
         if (paramToBeRefined == null) {
-            logger.error("{} - Parameter {}.{} was null.", displayName, baseComponent.getName(), paramName);
-            throw new NullPointerException(String.format("Parameter is null: %s.%s", baseComponent.getName(), paramName));
+            logger.error("{} - Parameter {}.{} was null.", displayName, componentType.getName(), paramName);
+            throw new NullPointerException(String.format("Parameter is null: %s.%s", componentType.getName(), paramName));
         }
         String parameterValue = nextComponentToBeRefined.getParameterValue(paramToBeRefined);
         boolean refinementDone = false;
         if (paramToBeRefined.isNumeric()) {
             refinementDone = refiner.refineNumericalParameter(children, base,
                     nextComponentToBeRefined,
-                    (NumericParameterDomain) paramToBeRefined.getDefaultDomain(), paramName, parameterValue);
+                    (NumericParameterDomain) paramToBeRefined.getDefaultDomain(),
+                    paramName, parameterValue);
         } else if (paramToBeRefined.isCategorical()) {
             refinementDone = refiner.refineCategoricalParameter(children, base,
                     nextComponentToBeRefined,
                     (CategoricalParameterDomain) paramToBeRefined.getDefaultDomain(), paramName, parameterValue);
         } else {
-            logger.error("Parameter {}.{} is neither numerical nor categorical. Ignoring parameter", baseComponent.getName(), paramName);
+            logger.error("Parameter {}.{} is neither numerical nor categorical. Ignoring parameter", componentType.getName(), paramName);
             return false;
         }
         refinements.addAll(children);
@@ -151,11 +153,11 @@ public class RefinementProcess {
                 logger.debug("{} - " +
                                 "The refinement of parameter {}.{} has yielded {} many candidates.",
                         displayName,
-                        baseComponent.getName(), paramName, children.size());
+                        componentType.getName(), paramName, children.size());
         } else if(!children.isEmpty()) {
             logger.warn("{} - The refinement of parameter {}.{} returned no new candidates but signaled that it is did.",
                     displayName,
-                    baseComponent.getName(), paramName);
+                    componentType.getName(), paramName);
         }
         return refinementDone;
     }
