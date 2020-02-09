@@ -154,11 +154,7 @@ public class NumericSplit {
     }
 
     private String numberToString(Number numb) {
-        if(isIntegerFlag) {
-            return String.valueOf(numb.longValue());
-        } else {
-            return String.format(Locale.US, "%f", numb.doubleValue());
-        }
+        return valueToString(numb, isInteger());
     }
 
     public void createSplits() {
@@ -231,7 +227,7 @@ public class NumericSplit {
                 // Integer values are
                 Optional<Long> val = meanInteger(min, max);
                 if(val.isPresent()) {
-                    String fixedSplitVal = String.valueOf(val.get());
+                    String fixedSplitVal = numberToString(val.get());
                     return Optional.of(fixedSplitVal);
                 } else {
                     // Else the integer value is not in [min, max), so ignore the split
@@ -247,7 +243,7 @@ public class NumericSplit {
             // if it is integer dont create a split smaller than 1.0
             Optional<Long> meanInteger = meanInteger(min, max);
             if(meanInteger.isPresent()) {
-                String intVal = String.valueOf((long) meanInteger.get());
+                String intVal = numberToString(meanInteger.get());
                 return Optional.of(intVal);
             } else {
                 logger.warn("Split of {}: Cannot split [{}, {}) because its difference {} is too small to contain further integer values",
@@ -256,9 +252,21 @@ public class NumericSplit {
             }
         } else {
             // Split is legal:
-            return Optional.of(String.format(Locale.US,
-                    "[%f, %f]",
-                    min, max));
+            return Optional.of(rangeToString(min, max));
+        }
+    }
+
+    public static String rangeToString(double min, double max) {
+        return String.format(Locale.US,
+                "[%f, %f]",
+                min, max);
+    }
+
+    public static String valueToString(Number number, boolean isInteger) {
+        if(isInteger) {
+            return String.valueOf(number.longValue());
+        } else {
+            return String.format(Locale.US, "%f", number.doubleValue());
         }
     }
 
@@ -315,7 +323,7 @@ public class NumericSplit {
         return diff;
     }
 
-    boolean isIntegerFlag() {
+    boolean isInteger() {
         return isIntegerFlag;
     }
 
@@ -332,7 +340,7 @@ public class NumericSplit {
     }
 
     public String getPreSplitRange() {
-        return String.format("[%f, %f]", min, max);
+        return rangeToString(min, max);
     }
 
 }

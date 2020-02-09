@@ -7,7 +7,7 @@ import ai.libs.hasco.model.Parameter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class CIPhase2 extends CIIndexed implements Iterable<ParamRefinementRecord> {
+public class CIPhase2 extends CIRoot implements Iterable<ParamRefinementRecord> {
 
 
     private final CIPhase1 ciPhase1Parent; // TODO remove reference to parent if it isn't needed
@@ -140,10 +140,6 @@ public class CIPhase2 extends CIIndexed implements Iterable<ParamRefinementRecor
         return result;
     }
 
-    public ParamRefinementRecord getNextParamToBeRefined() {
-        return getParamOrder().get(nextParamIndex);
-    }
-
 
     @Override
     public int hashCode() {
@@ -164,7 +160,19 @@ public class CIPhase2 extends CIIndexed implements Iterable<ParamRefinementRecor
 
     public Optional<ParamRefinementRecord> getNextRecord() {
         if(hasParameters()) {
-            return Optional.of(iterator().next());
+            return Optional.ofNullable(getParamOrder().get(nextParamIndex));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<ParamRefinementRecord> getPreviousRecord() {
+        if(hasParameters()) {
+            int prevIndex = nextParamIndex - 1;
+            if(prevIndex < 0) {
+                prevIndex = getParamOrder().size() - 1;
+            }
+            return Optional.ofNullable(getParamOrder().get(prevIndex));
         } else {
             return Optional.empty();
         }

@@ -44,7 +44,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
                     score += 1.5
             } else {
                 // component B:
-                score += 1.0
+                score += 0.5
                 // ignore parameters of B
             }
             return Optional.of(score)
@@ -136,8 +136,8 @@ class StdHASCOAbstractProblemsTest extends Specification {
                     score += 0.5
                 return Optional.of(score)
             } else {
-                // component B returns an error
-                return Optional.empty()
+                score += 0.5
+                return Optional.of(score)
             }
         }
         hasco.init()
@@ -211,10 +211,77 @@ class StdHASCOAbstractProblemsTest extends Specification {
 
     }
 
+    def "test problem with dependencies"() {
+
+        def requiredInterface = "IFace"
+        def compsFile = new File("testrsc/problemwithdependencies.json")
+        def compsLoader = new ComponentLoader(compsFile)
+        def compsRegistry = ComponentRegistry.fromComponentLoader(compsLoader)
+        def seed = 1L
+        def illegalEvals = [];
+
+        when:
+        StdHASCO hasco = new StdHASCO()
+        hasco.seed = seed
+        hasco.requiredInterface = requiredInterface
+        hasco.registry = compsRegistry
+        hasco.evaluator = { componentInstance ->
+            /*
+             * The evaluator that is fed to HASCO.
+             * It guides to search towards a specific solution.
+             * In this test the best solution invalidate param dependencies.
+             * At the end we check if param dependencies are respected.
+             */
+            if(!ImplUtil.isValidComponentPrototype(componentInstance)) {
+                println("Invalid component instance was evaluated: " + componentInstance);
+                illegalEvals.add(componentInstance)
+            }
+            double score = 1.0;
+            // The best component is B (d = none, c = true)
+            // The best valid component is B(d=green/blue/.., c=true)
+            def params = componentInstance.parameterValues
+            if(componentInstance.component.name == 'A') {
+                score += 1.5
+            } else {
+                if(params['d'] != 'none')
+                    score += 0.5
+                if(params['c'] != 'true')
+                    score += 0.7
+            }
+            return Optional.of(score)
+        }
+        hasco.init()
+        def runner = hasco.runner
+        def openList = hasco.openList
+
+        def invalidComponent
+        while(runner.step()) {
+            // Lets see if we find an invalid B component
+            invalidComponent = openList.queue.find { ci ->
+                if (ci.component.name == 'B') {
+                    def params = ci.parameterValues
+                    if (params['d'] == 'none' && params['c'] == 'true') {
+                        return true
+                    }
+                }
+                return false
+            }
+            if(invalidComponent != null) {
+                break;
+            }
+        }
+        def bestCandidate = hasco.bestSeenCandidate.get()
+
+        then:
+        invalidComponent == null
+        hasco.bestSeenScore.get() == 1.5
+        bestCandidate.component.name == 'B'
+        bestCandidate.parameterValues['c'] == 'true'
+        bestCandidate.parameterValues['d'] in ["red", "green", "blue", "white", "black"]
+        illegalEvals.isEmpty()
+    }
+
 }
-
-
-
 
 
 

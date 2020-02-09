@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  *
  */
-public class CIPhase1 extends CIIndexed {
+public class CIPhase1 extends CIRoot {
 
     private final static Logger logger = LoggerFactory.getLogger(CIPhase1.class);
 

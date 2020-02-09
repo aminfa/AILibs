@@ -9,8 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Supplier;
-
-import static ai.libs.hasco.simplified.std.ImplUtil.decideBetween;
+import java.util.stream.Collectors;
 
 /**
  * This class is there to decide what refinement operation should be done.
@@ -88,6 +87,52 @@ public class StdRefiner implements ComponentRefiner {
             logger.error("Parameter refinements done by the agent contains non-Phase 2 roots.");
             return Collections.emptyList();
         }
+        /*
+         * Filter all refinements that invalidate parameter dependencies.
+         * Propagate remaining parameter dependencies:
+         */
+        List<ComponentInstance> inValidComponentInstances = new ArrayList<>();
+        for (ComponentInstance refinement : refinements) {
+            CIPhase2 ciPhase2 = (CIPhase2) refinement;
+            DependencyPropagator propagator = new DependencyPropagator(ciPhase2);
+            propagator.propagateDependencies();
+            if(propagator.hasUnsatisfiableDependencies()) {
+                inValidComponentInstances.add(refinement);
+                if(logger.isTraceEnabled())
+                    logger.trace("Dependencies of refinement of {} are not satisfiable. " +
+                            "\nComponent {} with param values: {}\n has unsatisfiable param dependencies: {}", ciPhase2,
+                            propagator.getInstance().getComponent().getName(), propagator.getInstance().getParameterValues(),
+                            propagator.getUnsatisfiableDependencies());
+            } else {
+                propagator.propagateNewParameterValues();
+            }
+        }
+        // Previous implementation did not have any dependency value propagation
+//        refinements.stream()
+//                .map()
+//                .filter(ci -> {
+//                    CIPhase2 ciPhase2 = (CIPhase2) ci;
+//                    Optional<ParamRefinementRecord> previousRecord = ciPhase2.getPreviousRecord();
+//                    if(previousRecord.isPresent()) {
+//                        String[] refinedComponentPath = previousRecord.get().getComponentPath();
+//                        ComponentInstance refinedComponent = ciPhase2.getComponentByPath(refinedComponentPath);
+//                        boolean validComponentPrototype = ImplUtil.isValidComponentPrototype(refinedComponent);
+//                        if(!validComponentPrototype && logger.isTraceEnabled()) {
+//                            logger.trace("Param refined component, {}, " +
+//                                    "invalidate param dependencies:\n{}",
+//                                    refinedComponent.getComponent().getName(), refinedComponent.getParameterValues());
+//                        }
+//                        return !validComponentPrototype;
+//                    } else {
+//                        logger.warn("The refined parameter has no previous record.");
+//                        return true;
+//                    }
+//                })
+//                .collect(Collectors.toList());
+        if(!inValidComponentInstances.isEmpty()) {
+            logger.debug("Removed {} many refinements because they violate parameter dependencies.", inValidComponentInstances.size());
+            refinements.removeAll(inValidComponentInstances);
+        }
         return refinements;
     }
 
@@ -134,38 +179,24 @@ public class StdRefiner implements ComponentRefiner {
      * @return the path to the required interface. If empty, all the required intefaces of all components have been satisfied.
      */
     static List<String> BFSUnSatInterface(CIIndexed root) {
-        Set<Integer> visitedNodes = new HashSet<>();
-        Deque<CIIndexed> queue = new LinkedList<>();
-        queue.add(root);
 
-        while(!queue.isEmpty()) {
-            CIIndexed cursor = queue.pop();
-            /*
-             * Check if the node has been visited yet, and if not mark it.
-             */
-            if(visitedNodes.contains(cursor.getIndex())) {
-                continue;
-            } else  {
-                visitedNodes.add(cursor.getIndex());
-            }
+        for(ComponentInstance cursor : ComponentIterator.bfs(root)) {
             Map<String, ComponentInstance> providedIs = cursor.getSatisfactionOfRequiredInterfaces();
             Map<String, String> requiredIs = cursor.getComponent().getRequiredInterfaces();
             /*
              * Iterate over all required intefaces of the cursor
              */
             for (String interfaceName : requiredIs.keySet()) {
-                if(providedIs.containsKey(interfaceName) &&
-                        providedIs.get(interfaceName) != null) {
-                    /*
-                     * The required interface has been satisfied by a component instance.
-                     * Add the node to the queue:
-                     */
-                    queue.add((CIIndexed) providedIs.get(interfaceName));
-                } else {
-                    // found a required interface, that hasn't been satisfied yet.
-                    List<String> path = new ArrayList<>(Arrays.asList(cursor.getPath()));
-                    path.add(interfaceName);
-                    return path;
+                if (!providedIs.containsKey(interfaceName) ||
+                        providedIs.get(interfaceName) == null) {
+                            // found a required interface, that hasn't been satisfied yet.
+                    if(cursor instanceof CIIndexed) {
+                        List<String> path = Arrays.asList(((CIIndexed) cursor).getPath());
+                        path.add(interfaceName);
+                        return path;
+                    } else {
+                        throw new IllegalStateException("Component type is not recognized: " + cursor);
+                    }
                 }
             }
         }

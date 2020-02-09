@@ -128,11 +128,7 @@ public class StdSampler implements ComponentInstanceSampler {
                  */
                 newVal = drawRandomValueFromSplits(instance.getComponent(), param, val);
             } else{
-                if(val == null) {
-                    newVal = selectRandomValue(param);
-                } else {
-                    newVal = selectFromValue(param, val);
-                }
+                newVal = selectRandomCategory(param, val);
             }
             values.put(name, newVal);
         }
@@ -168,6 +164,16 @@ public class StdSampler implements ComponentInstanceSampler {
             String randomParamValue = splits.get((int) (splits.size() * ng.get()));
             return randomParamValue;
         }
+    }
+
+    private String selectRandomCategory(Parameter param, String val) {
+        CategoricalParameterDomain dom = (CategoricalParameterDomain) DomainHandler.strToParamDomain(param.getDefaultDomain(), val);
+        if(dom.getValues().length == 0) {
+            throw new IllegalArgumentException("Parameter " + param + " with value "
+                    + val + " has not categories left to choose from.");
+        }
+        int index = ImplUtil.decideBetween(ng, dom.getValues().length);
+        return dom.getValues()[index];
     }
 
     private String selectRandomValue(Parameter param) {
