@@ -53,12 +53,12 @@
       "default" : "true"
     }, {
       "name" : "a3",
-      "type" : "double",
+      "type" : "int",
       "default" : 1.0E-7,
-      "min" : 1.0E-12,
-      "max" : 10.0,
-      "refineSplits" : 8,
-      "minInterval" : 10
+      "min" : 0,
+      "max" : 20.0,
+      "refineSplits" : 5,
+      "minInterval" : 1
     }, {
       "name" : "a4",
       "type" : "double",

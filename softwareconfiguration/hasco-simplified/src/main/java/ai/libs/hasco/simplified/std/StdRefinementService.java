@@ -100,7 +100,8 @@ public class StdRefinementService implements RefinementService {
         numericSplit.createSplits();
         List<String> splits = numericSplit.getSplits();
         if(splits.isEmpty()){
-            logger.error("Couldn't split range:{} into split-count:{} with min-size:{}",
+            if(logger.isTraceEnabled())
+                logger.trace("Couldn't split range:{} into split-count:{} with min-size:{}",
                     numericSplit.getPreSplitRange(), splitCount, minSplitSize);
             return false;
         }

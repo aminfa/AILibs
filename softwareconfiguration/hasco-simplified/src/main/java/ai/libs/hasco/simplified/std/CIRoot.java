@@ -43,8 +43,8 @@ public class CIRoot extends CIIndexed implements Comparable<CIRoot> {
             logger.debug("Refinement {} reused {} many evaluations from parent.", displayText(), witnesses.size());
             EvalReport newReport = new EvalReport(witnesses, witnessScores);
             setEvalReport(newReport);
-        } else {
-            logger.debug("Refinement {} couldn't resue any previous evaluation.", displayText());
+        } else if(logger.isTraceEnabled()){
+            logger.trace("Refinement {} couldn't reuse any previous evaluation.", displayText());
         }
     }
 
@@ -188,6 +188,15 @@ public class CIRoot extends CIIndexed implements Comparable<CIRoot> {
 
     public void setEvalReport(EvalReport evalReport) {
         this.evalReport = evalReport;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder(super.toString());
+        if(hasBeenEvaluated()) {
+            sb.append("-e:").append(getEvalReport().getScore().isPresent()?
+                    getEvalReport().getScore().get() : "error");
+        }
+        return sb.toString();
     }
 
     @Override

@@ -124,15 +124,15 @@ class StdHASCOAbstractProblemsTest extends Specification {
                     score += 0.5
                 if(Double.parseDouble(params['a3']) <= 5.0)
                     score += 0.5
-                else if(Double.parseDouble(params['a3']) <= 9.0)
+                else if(Double.parseDouble(params['a3']) <= 8.0)
                     score += 1.0
-                if(Double.parseDouble(params['a4']) >= 1.0)
-                    score += 0.5
-                else if(Double.parseDouble(params['a4']) >= 9.0)
+                if(Double.parseDouble(params['a4']) >= 9.0)
                     score += 0.2
-                if(Double.parseDouble(params['a5']) <= 5.0)
+                else if(Double.parseDouble(params['a4']) >= 2.0)
+                    score += 0.5
+                if(Double.parseDouble(params['a5']) <= 6.0)
                     score += 1.0
-                else if(Double.parseDouble(params['a5']) >= 6.0)
+                else if(Double.parseDouble(params['a5']) >= 8)
                     score += 0.5
                 return Optional.of(score)
             } else {
@@ -205,9 +205,9 @@ class StdHASCOAbstractProblemsTest extends Specification {
         s.component.name == 'A'
         s.parameterValues['a1'] == 'true'
         s.parameterValues['a2'] == 'v3'
-        Double.parseDouble(s.parameterValues['a3']) >= 9.0
-        Double.parseDouble(s.parameterValues['a4']) <= 1.0
-        Double.parseDouble(s.parameterValues['a5'])  - 5.0 <= 1.0
+        Double.parseDouble(s.parameterValues['a3']) >= 8.0
+        Double.parseDouble(s.parameterValues['a4']) <= 2.0
+        Double.parseDouble(s.parameterValues['a5'])  - 6.0 <= 2.0
 
     }
 
@@ -281,6 +281,61 @@ class StdHASCOAbstractProblemsTest extends Specification {
         illegalEvals.isEmpty()
     }
 
+    def "test numeric dependencies test"() {
+
+        def requiredInterface = "IFace"
+        def compsFile = new File("testrsc/numericparamdependencies.json")
+        def compsLoader = new ComponentLoader(compsFile)
+        def compsRegistry = ComponentRegistry.fromComponentLoader(compsLoader)
+        def seed = -1L
+        def illegalEvals = [];
+
+        when:
+        StdHASCO hasco = new StdHASCO()
+        hasco.seed = seed
+        hasco.requiredInterface = requiredInterface
+        hasco.registry = compsRegistry
+        hasco.evaluator = { componentInstance ->
+            /*
+             * The evaluator that is fed to HASCO.
+             * It guides to search towards a specific solution.
+             * In this test the best solution invalidate param dependencies.
+             * At the end we check if param dependencies are respected.
+             */
+            if(!ImplUtil.isValidComponentPrototype(componentInstance)) {
+                println("Invalid component instance was evaluated: " + componentInstance);
+                illegalEvals.add(componentInstance)
+            }
+            double score = 1.0;
+            // The best component is A (a1 = true, a3 >= 5, a4 <= 5)
+            // The best valid component is A(a=true,5 >= a3 >= 3, a4 <= 5)
+            def params = componentInstance.parameterValues
+            if(params['a1'] != 'true')
+                score += 1.0
+            if(Double.parseDouble(params['a3']) <= 5.0 )
+                score += 0.5
+            if(Double.parseDouble(params['a4']) >= 5.0 )
+                score += 1.0
+            return Optional.of(score)
+        }
+        hasco.init()
+        def runner = hasco.runner
+        def openList = hasco.openList
+
+        def invalidComponent
+        runner.runSequentially()
+        def bestCandidate = hasco.bestSeenCandidate.get()
+
+        then:
+        invalidComponent == null
+        hasco.bestSeenScore.get() == 1.5
+        bestCandidate.component.name == 'A'
+        bestCandidate.parameterValues['a1'] == 'true'
+        Double.parseDouble(bestCandidate.parameterValues['a3']) - 3 <= 2.0
+        Double.parseDouble(bestCandidate.parameterValues['a4']) <= 5.0
+
+        illegalEvals.isEmpty()
+    }
 }
 
 
