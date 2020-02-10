@@ -1,6 +1,8 @@
 package ai.libs.hasco.simplified.std;
 
+import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.ComponentInstance;
+import ai.libs.jaicore.basic.sets.Pair;
 
 import java.util.*;
 
@@ -35,6 +37,52 @@ public class ComponentIterator {
                 return next;
             }
 
+        };
+    }
+
+    public static Iterable<Pair<ComponentInstance, Optional<ComponentInstance>>> bfsPair
+            (ComponentInstance root, ComponentInstance witnessRoot) {
+        return () -> new Iterator<Pair<ComponentInstance, Optional<ComponentInstance>>>() {
+
+
+            Set<Integer> indexGuard = new HashSet<>();
+
+            Deque<Pair<ComponentInstance, Optional<ComponentInstance>>> queue = new LinkedList<>();
+
+            {
+                enqueue(root, witnessRoot);
+            }
+
+            private void enqueue(ComponentInstance i1, ComponentInstance i1Witness) {
+                if(checkAndUpdateGuard(indexGuard, i1)) {
+                    return;
+                }
+                queue.add(new Pair<>(i1, Optional.ofNullable(i1Witness)));
+            }
+
+            @Override
+            public boolean hasNext() {
+                return !queue.isEmpty();
+            }
+
+            @Override
+            public Pair<ComponentInstance, Optional<ComponentInstance>> next() {
+                Pair<ComponentInstance, Optional<ComponentInstance>> nextPair = queue.pop();
+                for (Map.Entry<String, ComponentInstance> componentInterface :
+                        nextPair.getX().getSatisfactionOfRequiredInterfaces().entrySet()) {
+                    ComponentInstance child = componentInterface.getValue();
+                    ComponentInstance childWitness;
+                    if(nextPair.getY().isPresent()) {
+                        childWitness = nextPair.getY().get()
+                                .getSatisfactionOfRequiredInterfaces()
+                                .get(componentInterface.getKey());
+                    } else {
+                        childWitness = null;
+                    }
+                    enqueue(child, childWitness);
+                }
+                return nextPair;
+            }
         };
     }
 

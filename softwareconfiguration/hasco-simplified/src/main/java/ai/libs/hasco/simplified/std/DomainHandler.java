@@ -6,16 +6,15 @@ import ai.libs.hasco.model.IParameterDomain;
 import ai.libs.hasco.model.NumericParameterDomain;
 import ai.libs.jaicore.basic.sets.SetUtil;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface DomainHandler<T> {
+public abstract class DomainHandler<T> {
 
-    static final DomainHandler<String> STR_CONVERTER = DomainHandler.newHandler(
+    private static final DomainHandler<String> STR_CONVERTER = DomainHandler.newHandler(
             numDom -> {
                 if(numDom.getMin() >= numDom.getMax()) {
                     return NumericSplit.valueToString(numDom.getMin(), numDom.isInteger());
@@ -44,16 +43,16 @@ public interface DomainHandler<T> {
     );
 
 
-    T handleNumericDomain(NumericParameterDomain numDom);
+    abstract T handleNumericDomain(NumericParameterDomain numDom);
 
-    T handleCatDomain(CategoricalParameterDomain catDom);
+    abstract T handleCatDomain(CategoricalParameterDomain catDom);
 
-    default T handleBooleanDomain(BooleanParameterDomain boolDom) {
+    T handleBooleanDomain(BooleanParameterDomain boolDom) {
         return handleCatDomain(boolDom);
     }
 
 
-    default T handle(IParameterDomain domain) {
+    public T handle(IParameterDomain domain) {
         if(domain instanceof NumericParameterDomain) {
             return handleNumericDomain((NumericParameterDomain) domain);
         } else if(domain instanceof BooleanParameterDomain) {

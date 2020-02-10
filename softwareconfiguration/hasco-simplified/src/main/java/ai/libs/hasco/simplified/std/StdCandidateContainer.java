@@ -8,67 +8,54 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class StdCandidateContainer implements ClosedList, OpenList {
+public class StdCandidateContainer implements ClosedList, OpenList, Comparator<CIRoot> {
 
-    private final PriorityQueue<ComponentInstance> queue;
+    private final PriorityQueue<CIRoot> queue;
 
-    private final EvaluationCache evaluationCache;
+    private final List<CIRoot> firstRoots = new ArrayList<>();
+
+//    private final EvaluationCache evaluationCache;
 
     private final static Logger logger = LoggerFactory.getLogger(StdCandidateContainer.class);
 
     public StdCandidateContainer() {
-        this.evaluationCache = new EvaluationCache();
-        this.queue = new PriorityQueue<>(evaluationCache);
+//        this.evaluationCache = new EvaluationCache();
+        this.queue = new PriorityQueue<>(this);
     }
 
     @Override
     public boolean isClosed(ComponentInstance candidate) {
-        return evaluationCache.containsResult(candidate);
+        return castToRoot(candidate).hasBeenEvaluated();
     }
 
-    private void enterResult(ComponentInstance candidate, Optional<Double> result) {
-        if(result.isPresent()) {
-            evaluationCache.insertEvalResult(candidate, result.get());
+    private CIRoot castToRoot(ComponentInstance candidate) {
+        if(candidate instanceof CIRoot) {
+            return ((CIRoot) candidate);
         } else {
-            evaluationCache.insertEvalError(candidate);
+            throw new RuntimeException("Candidate is not root: " + candidate);
         }
     }
+
 
     @Override
     public void insert(ComponentInstance candidate,
                        List<ComponentInstance> witnesses, List<Optional<Double>> results) {
 
-        OptionalDouble averageScore = results.stream()
-                .filter(Optional::isPresent)
-                .mapToDouble(Optional::get)
-                .average();
-
-        if(averageScore.isPresent()) {
-            evaluationCache.insertEvalResult(candidate, averageScore.getAsDouble());
+        CIRoot root = castToRoot(candidate);
+        EvalReport report;
+        if(root.hasBeenEvaluated()) {
+            report = root.getEvalReport();
+            report.enterResults(witnesses, results);
         } else {
-            evaluationCache.insertEvalError(candidate);
+            report = new EvalReport(witnesses, results);
+            root.setEvalReport(report);
         }
-
-        if(witnesses.size() != results.size()) {
-            logger.warn("The witnesses and result lists have different sizes: {} ≠ {}",
-                    witnesses.size(), results.size());
-        }
-        for (int i = 0; i < witnesses.size() && i < results.size(); i++) {
-            enterResult(witnesses.get(i), results.get(i));
-        }
-        
-
-        queue.add(candidate);
-    }
-
-    @Override
-    public Optional<Optional<Double>> retrieve(ComponentInstance prototype, ComponentInstance sample) {
-        return Optional.ofNullable(evaluationCache.retrieveResult(sample));
+        queue.add(root);
     }
 
     public void insertRoot(ComponentInstance root) {
-        evaluationCache.insertEvalResult(root, 0.);
-        queue.add(root);
+        firstRoots.add(castToRoot(root));
+        queue.add(castToRoot(root));
     }
 
     @Override
@@ -81,11 +68,26 @@ public class StdCandidateContainer implements ClosedList, OpenList {
         return queue.poll();
     }
 
-    public PriorityQueue<ComponentInstance> getQueue() {
+    public PriorityQueue<CIRoot> getQueue() {
         return queue;
     }
 
     public int getCacheSize() {
-        return evaluationCache.getSize();
+        return -1; // TODO remove this method, as the cache is not used anymore.
+    }
+
+    @Override
+    public int compare(CIRoot o1, CIRoot o2) {
+        if(firstRoots.contains(o1)) {
+            if(firstRoots.contains(o2)) {
+                return 0;
+            } else {
+                return -1;
+            }
+        } else if(firstRoots.contains(o2)) {
+            return 1;
+        } else {
+            return o1.compareTo(o2);
+        }
     }
 }

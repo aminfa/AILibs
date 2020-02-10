@@ -2,10 +2,18 @@ package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.ComponentInstance;
+import ai.libs.hasco.model.IParameterDomain;
+import ai.libs.hasco.model.Parameter;
+import ai.libs.jaicore.basic.sets.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class CIRoot extends CIIndexed {
+public class CIRoot extends CIIndexed implements Comparable<CIRoot> {
+
+
+    private final static Logger logger = LoggerFactory.getLogger(CIRoot.class);
 
     private EvalReport evalReport = null;
 
@@ -14,6 +22,66 @@ public class CIRoot extends CIIndexed {
                   Map<String, ComponentInstance> satisfactionOfRequiredInterfaces,
                   Integer componentIndex) {
         super(component, parameterValues, satisfactionOfRequiredInterfaces, componentIndex);
+    }
+
+    public void copyWitnessEvaluations(CIRoot parentRoot) {
+        if(!parentRoot.hasBeenEvaluated()) {
+            return;
+        }
+        EvalReport parentReport = parentRoot.getEvalReport();
+        List<ComponentInstance> witnesses = new ArrayList<>();
+        List<Optional<Double>> witnessScores = new ArrayList<>();
+
+        for (int i = 0; i < parentReport.getWitnesses().size(); i++) {
+            ComponentInstance witness = parentReport.getWitnesses().get(i);
+            if(isWitness(witness)) {
+                witnesses.add(witness);
+                witnessScores.add(parentReport.getWitnessScores().get(i));
+            }
+        }
+        if(!witnesses.isEmpty()) {
+            logger.debug("Refinement {} reused {} many evaluations from parent.", displayText(), witnesses.size());
+            EvalReport newReport = new EvalReport(witnesses, witnessScores);
+            setEvalReport(newReport);
+        } else {
+            logger.debug("Refinement {} couldn't resue any previous evaluation.", displayText());
+        }
+    }
+
+    private boolean isWitness(ComponentInstance witnessRoot) {
+        for (Pair<ComponentInstance, Optional<ComponentInstance>> instanceWitnessPair :
+                ComponentIterator.bfsPair(this, witnessRoot)) {
+            /*
+             * Check if the component exists in the witness:
+             */
+            if(!instanceWitnessPair.getY().isPresent()) {
+                return false;
+            }
+            ComponentInstance instance = instanceWitnessPair.getX();
+            ComponentInstance witness = instanceWitnessPair.getY().get();
+            /*
+             * Check if the witness is the same component:
+             */
+            if(!instance.getComponent().getName().equals(witness.getComponent().getName())) {
+                return false;
+            }
+            /*
+             * Check if parameter values are a sub-set:
+             */
+            for (Map.Entry<String, String> paramEntry : instance.getParameterValues().entrySet()) {
+                String paramName = paramEntry.getKey();
+                String paramValue = paramEntry.getValue();
+                String witnessParamValue = witness.getParameterValue(paramName);
+                Parameter paramType = instance.getComponent().getParameterWithName(paramName);
+                IParameterDomain domain = paramType.getDefaultDomain();
+                IParameterDomain instanceParamDom = DomainHandler.strToParamDomain(domain, paramValue);
+                IParameterDomain witnessParamDom = DomainHandler.strToParamDomain(domain, witnessParamValue);
+                if(!instanceParamDom.subsumes(witnessParamDom)){
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -121,4 +189,30 @@ public class CIRoot extends CIIndexed {
     public void setEvalReport(EvalReport evalReport) {
         this.evalReport = evalReport;
     }
+
+    @Override
+    public int compareTo(final CIRoot o) {
+        if(o == null) {
+            return -1;
+        }
+        if(hasBeenEvaluated()) {
+            if(o.hasBeenEvaluated()) {
+                EvalReport thisEval = this.getEvalReport();
+                EvalReport otherEval = o.getEvalReport();
+                return thisEval.compareTo(otherEval);
+            } else {
+                // r1 has result but r2 doesn't.
+                return -1;
+            }
+        } else {
+            if(o.hasBeenEvaluated()) {
+                // r2 has result but r1 doesn't.
+                return 1;
+            } else {
+                // Both results are not present
+                return 0;
+            }
+        }
+    }
+
 }

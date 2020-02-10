@@ -126,7 +126,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
                     score += 0.5
                 else if(Double.parseDouble(params['a3']) <= 9.0)
                     score += 1.0
-                if(Double.parseDouble(params['a4']) >= 5.0)
+                if(Double.parseDouble(params['a4']) >= 1.0)
                     score += 0.5
                 else if(Double.parseDouble(params['a4']) >= 9.0)
                     score += 0.2
@@ -195,19 +195,19 @@ class StdHASCOAbstractProblemsTest extends Specification {
         println("The queue reached a maximum size of ${highestQueueSize}.")
         println("The solution was found at step ${bestSolutionFoundAt}, " +
                 "the first ${((double)bestSolutionFoundAt)/steps} %  of all steps.\n" +
-                "The solution was with ${bestSolutionStepEvalCount} evaluation with a cache size of ${bestSolutionStepCacheSize}")
+                "The solution was found with ${bestSolutionStepEvalCount} evaluation, at a cache size of ${bestSolutionStepCacheSize}")
 
         def s = hasco.bestSeenCandidate.get();
         then:
         openList.queue.isEmpty()
         // A (a1=true, a2=v3, a3>=9.0, a4<=1.0, 5<=a5<=6)
+        hasco.bestSeenScore.get() == 1.0
         s.component.name == 'A'
         s.parameterValues['a1'] == 'true'
         s.parameterValues['a2'] == 'v3'
         Double.parseDouble(s.parameterValues['a3']) >= 9.0
         Double.parseDouble(s.parameterValues['a4']) <= 1.0
         Double.parseDouble(s.parameterValues['a5'])  - 5.0 <= 1.0
-        hasco.bestSeenScore.get() == 1.0
 
     }
 

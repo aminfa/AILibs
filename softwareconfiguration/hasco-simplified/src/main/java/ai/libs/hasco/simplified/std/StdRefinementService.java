@@ -30,13 +30,16 @@ public class StdRefinementService implements RefinementService {
     }
 
     @Override
-    public boolean refineCategoricalParameter(List<ComponentInstance> refinements, ComponentInstance base, ComponentInstance component, CategoricalParameterDomain domain, String name, String currentValue) {
+    public boolean refineCategoricalParameter(List<ComponentInstance> refinements, ComponentInstance base,
+                                              ComponentInstance component, CategoricalParameterDomain domain,
+                                              String name, String currentValue) {
         if(!( component instanceof CIIndexed) ) {
             throw new IllegalArgumentException("Component is not indexed");
         }
         if(!(base instanceof CIPhase2)) {
             throw new IllegalArgumentException("Base component is not of phase 2 type: " + base.getClass().getName());
         }
+        CIPhase2 phase2Base = (CIPhase2) base;
         if(currentValue != null) {
             return false;
         }
@@ -44,9 +47,10 @@ public class StdRefinementService implements RefinementService {
             return false;
         }
         for (String category : domain.getValues()) {
-            CIPhase2 newBase = new CIPhase2((CIPhase2) base);
+            CIPhase2 newBase = new CIPhase2(phase2Base);
             ComponentInstance refinedInstance = newBase.getComponentByPath(((CIIndexed) component).getPath());
             refinedInstance.getParameterValues().put(name, category);
+            newBase.copyWitnessEvaluations(phase2Base);
             refinements.add(newBase);
         }
         return true;
@@ -104,6 +108,7 @@ public class StdRefinementService implements RefinementService {
             CIPhase2 newBase = new CIPhase2((CIPhase2) base);
             ComponentInstance refinedInstance = newBase.getComponentByPath(((CIIndexed) component).getPath());
             refinedInstance.getParameterValues().put(name, newVal);
+            newBase.copyWitnessEvaluations((CIRoot) base);
             refinements.add(newBase);
         }
         return true;
@@ -145,6 +150,7 @@ public class StdRefinementService implements RefinementService {
                     index, refinementRecord.getInterfaceRefinementPath());
             parent.getSatisfactionOfRequiredInterfaces().put(requiredInterfaceName, newInstance);
             newBase.addRecord(refinementRecord);
+            newBase.copyWitnessEvaluations((CIRoot) base);
             refinements.add(newBase);
         }
         return true;

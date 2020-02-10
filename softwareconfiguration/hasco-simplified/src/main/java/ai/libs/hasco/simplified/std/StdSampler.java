@@ -42,8 +42,13 @@ public class StdSampler implements ComponentInstanceSampler {
 
     @Override
     public List<ComponentInstance> drawSamples(ComponentInstance source) {
+        CIRoot root = (CIRoot) source;
+        int alreadySampleSize = 0;
+        if(root.hasBeenEvaluated()) {
+            alreadySampleSize = root.getEvalReport().getWitnessScores().size();
+        }
         List<ComponentInstance> cis = new ArrayList<>();
-        for (int i = 0; i < SAMPLES_PER_DRAW; i++) {
+        for (int i = 0; i < SAMPLES_PER_DRAW - alreadySampleSize; i++) {
             ComponentInstance target = copyParams(source);
             // set all required interfaces, using an index guard
             groundRequiredInterfaces(source, target, new HashSet<>());
@@ -167,7 +172,8 @@ public class StdSampler implements ComponentInstanceSampler {
     }
 
     private String selectRandomCategory(Parameter param, String val) {
-        CategoricalParameterDomain dom = (CategoricalParameterDomain) DomainHandler.strToParamDomain(param.getDefaultDomain(), val);
+        CategoricalParameterDomain dom = (CategoricalParameterDomain)
+                DomainHandler.strToParamDomain(param.getDefaultDomain(), val);
         if(dom.getValues().length == 0) {
             throw new IllegalArgumentException("Parameter " + param + " with value "
                     + val + " has not categories left to choose from.");

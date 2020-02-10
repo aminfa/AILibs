@@ -36,20 +36,10 @@ public class SimpleHASCO {
         List<Optional<Double>> results = new ArrayList<>(samples.size());
         for (ComponentInstance sample : samples) {
             Optional<Double> evalResult;
-            Optional<Optional<Double>> retrievedResult = closedList.retrieve(prototype, sample);
-            if(retrievedResult.isPresent()) {
-                /*
-                 * This sample has already been evaluated once:
-                 */
-                logger.trace("A component sample was already evaluated. The cached result is reused.");
-                evalResult = retrievedResult.get();
-            } else {
-                /*
-                 * Evaluate this sample for the first time.
-                 */
-                logger.trace("A component sample has no cached result, using the evaluator instead.");
-                evalResult = evaluator.eval(sample);
-            }
+            /*
+             * Evaluate this sample for the first time:
+             */
+            evalResult = evaluator.eval(sample);
             results.add(evalResult);
             /*
              * Check if the thread is interrupted while the evaluator was processing

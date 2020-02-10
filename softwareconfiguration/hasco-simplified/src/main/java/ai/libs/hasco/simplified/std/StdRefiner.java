@@ -14,11 +14,11 @@ import java.util.stream.Collectors;
 /**
  * This class is there to decide what refinement operation should be done.
  * It differentiates between phase 1 and phase 2 component instances:
- *  -   Phase 2 component instances have a explicitly ordered list of parameters.
+ *  - Phase 2 component instances have a explicitly ordered list of parameters.
  *      This refiner simply chooses parameters based on round robin.
  *
- *  -   Phase 1 component instances are searched for required interfaces that are not yet set.
- *      This search is done in a BFS manner and the result is refined with component instances that are providers.
+ *  - Phase 1 component instances are searched for required interfaces that are not yet set.
+ *      This search is done in a BFS manner, and the result is refined with component instances that are providers.
  *      If all required interfaces are set it will instead create a phase 2 component instance.
  *
  */
@@ -56,7 +56,7 @@ public class StdRefiner implements ComponentRefiner {
         for(ParamRefinementRecord paramRefinement : componentInstance) {
             ComponentInstance trg = componentInstance.getComponentByPath(paramRefinement.getComponentPath());
             process.setComponentToBeRefined(trg);
-            logger.debug("Refining parameter {} of component {} at path: {}",
+            logger.trace("Refining parameter {} of component {} at the path: {}",
                     paramRefinement.getParamName(),
                     trg.getComponent().getName(),
                     Arrays.toString(paramRefinement.getComponentPath()));
