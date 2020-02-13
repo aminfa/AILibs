@@ -119,9 +119,12 @@ class NumericSplitTest extends Specification {
                 (0..4).collect {
                     [it * 2.0, (it + 1) * 2.0]
                 },
-                (0.5..9.5),
-                [[0.000000, 2.500000], [2.500000, 5.000000], [5.000000, 7.500000], [7.500000, 10.000000]],
-
+                [
+                        [0.0, 1.0], [1.0, 2.0], [2.0, 3.0],
+                        [3.0, 4.0], [4.0, 5.0], [5.0, 6.0],
+                        [6.0, 7.0], [7.0, 8.0], [8.0, 9.0],
+                        [9.0, 10.0]],
+                [[0.0, 2.500000], [2.500000, 5.0], [5.0, 7.500000], [7.500000, 10.0]],
                 [
                         [10.0, 40.0],
                         [40.0, 70.0],
@@ -132,9 +135,9 @@ class NumericSplitTest extends Specification {
                         [40.0, 70.0],
                         [70.0, 100.0]
                 ],
-                [25.0, 55.0, 85.0],
-                [25.0, 55.0, 85.0],
-                [32.5, 77.5],
+                [[10.0, 40.0], [40.0, 70.0], [70.0, 100.0]],
+                [[10.0, 40.0], [40.0, 70.0], [70.0, 100.0]],
+                [[10.0, 55.0], [55.0, 100.0]],
 
                 [
                         [-10, -6],
@@ -143,8 +146,9 @@ class NumericSplitTest extends Specification {
                         [2, 6],
                         [6, 10]
                 ],
-                [-8, -4, 0, 4, 8],
-                [-6.5, 0.5, 7.5]
+                [[-10.0, -6.0], [-6.0, -2.0],
+                 [-2.0, 2.0], [2.0, 6.0], [6.0, 10.0]],
+                [[-10.0, -3.0], [-3.0, 4.0], [4.0, 11.0]]
         ]
     }
 
@@ -206,8 +210,11 @@ class NumericSplitTest extends Specification {
                 (0..4).collect {
                     [it * 2.0, (it + 1) * 2.0]
                 },
-                [[0.000000, 2.500000], [2.500000, 5.000000], [5.000000, 7.500000], [7.500000, 10.000000]],
-                (0..9),
+                [[0.0, 2.500000], [2.500000, 5.0], [5.0, 7.500000], [7.500000, 10.0]],
+                [[0.0, 1.0], [1.0, 2.0], [2.0, 3.0],
+                 [3.0, 4.0], [4.0, 5.0], [5.0, 6.0],
+                 [6.0, 7.0], [7.0, 8.0], [8.0, 9.0],
+                 [9.0, 10.0]],
 
                 [
                         [10.0, 40.0],
@@ -219,9 +226,9 @@ class NumericSplitTest extends Specification {
                         [40.0, 70.0],
                         [70.0, 100.0]
                 ],
-                [25.0, 55.0, 85.0],
-                [25.0, 55.0, 85.0],
-                [33, 78],
+                [[10.0, 40.0], [40.0, 70.0], [70.0, 100.0]],
+                [[10.0, 40.0], [40.0, 70.0], [70.0, 100.0]],
+                [[10.0, 55.0], [55.0, 100.0]],
 
                 [
                         [-10, -6],
@@ -230,8 +237,8 @@ class NumericSplitTest extends Specification {
                         [2, 6],
                         [6, 10]
                 ],
-                [-8, -4, 0, 4, 8],
-                [-6, 1, 8]
+                [[-10.0, -6.0], [-6.0, -2.0], [-2.0, 2.0], [2.0, 6.0], [6.0, 10.0]],
+                [[-10.0, -3.0], [-3.0, 4.0], [4.0, 11.0]]
         ]
     }
 
@@ -243,13 +250,17 @@ class NumericSplitTest extends Specification {
         numSplit.createSplits()
 
         then:
-        numSplit.splits == [2, 6, 11.5].collect { convertToString it }
+        numSplit.splits == [[0.0, 4.0],
+                            [4.0, 8.0],
+                            [8.0, 15.0]].collect { convertToString it }
 
         when:
         numSplit.configureSplits(10, 2.0)
         numSplit.createSplits()
         then:
-        numSplit.splits == [1.0, 3.0, 5.0, 7.0, 9.0, 11.0, 13.5].collect {
+        numSplit.splits == [[0.0, 2.0], [2.0, 4.0], [4.0, 6.0],
+                            [6.0, 8.0], [8.0, 10.0], [10.0, 12.0],
+                            [12.0, 15.0]].collect {
             convertToString it
         }
 
@@ -259,7 +270,7 @@ class NumericSplitTest extends Specification {
         numSplit.createSplits()
 
         then:
-        numSplit.splits == [4, 15].collect {convertToString(it, false)}
+        numSplit.splits == [[0.0, 8.0], [8.0, 21.0]].collect {convertToString(it, false)}
 
 
         when:
@@ -268,7 +279,10 @@ class NumericSplitTest extends Specification {
         numSplit.createSplits()
 
         then:
-        numSplit.splits == (0..9).collect {convertToString(it, false)}
+        numSplit.splits == [[0.0, 1.0], [1.0, 2.0], [2.0, 3.0],
+                            [3.0, 4.0], [4.0, 5.0], [5.0, 6.0],
+                            [6.0, 7.0], [7.0, 8.0], [8.0, 9.0],
+                            [9.0, 10.0]].collect {convertToString(it, false)}
 
 
     }

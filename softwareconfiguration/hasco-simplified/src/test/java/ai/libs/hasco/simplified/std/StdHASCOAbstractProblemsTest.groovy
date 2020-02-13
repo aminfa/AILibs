@@ -282,7 +282,6 @@ class StdHASCOAbstractProblemsTest extends Specification {
     }
 
     def "test numeric dependencies test"() {
-
         def requiredInterface = "IFace"
         def compsFile = new File("testrsc/numericparamdependencies.json")
         def compsLoader = new ComponentLoader(compsFile)
@@ -335,6 +334,59 @@ class StdHASCOAbstractProblemsTest extends Specification {
         Double.parseDouble(bestCandidate.parameterValues['a4']) <= 5.0
 
         illegalEvals.isEmpty()
+    }
+
+    def "test tiny recursive problem"() {
+        def requiredInterface = "IFace"
+        def compsFile = new File("testrsc/tinyrecursiveproblem.json")
+        def compsLoader = new ComponentLoader(compsFile)
+        def compsRegistry = ComponentRegistry.fromComponentLoader(compsLoader)
+        def seed = 1L
+
+        when:
+        StdHASCO hasco = new StdHASCO()
+        hasco.seed = seed
+        hasco.requiredInterface = requiredInterface
+        hasco.registry = compsRegistry
+        hasco.evaluator = { a ->
+            /*
+             * The evaluator that is fed to HASCO.
+             * It guides to search towards a specific solution.
+             */
+            double score = 1.0;
+            // The best component is A( B( b=false, C (c = 10) ))
+            def params = a.parameterValues
+            if(a.component.name != 'A') {
+                throw new IllegalArgumentException()
+            }
+            def b = a.getSatisfactionOfRequiredInterfaces()['ri']
+            if(b.component.name != 'B') {
+                throw new IllegalArgumentException()
+            }
+            if(b.parameterValues['b'] != 'false') {
+                score += 1.0
+            }
+            def c = b.satisfactionOfRequiredInterfaces['rid']
+            if(c.component.name != 'C') {
+                throw new IllegalArgumentException()
+            }
+            score += 11 - Double.parseDouble(c.parameterValues['c'])
+            return Optional.of(score)
+        }
+        hasco.init()
+        def runner = hasco.runner
+        def openList = hasco.openList
+
+        def invalidComponent
+        while(runner.step()) {
+        }
+        def bc = hasco.bestSeenCandidate.get()
+        def bs = hasco.bestSeenScore.get()
+        then:
+        bs <= 3.0
+        bc.satisfactionOfRequiredInterfaces['ri'].parameterValues['b'] == 'false'
+        bc.satisfactionOfRequiredInterfaces['ri']
+                .satisfactionOfRequiredInterfaces['rid'].parameterValues['c'] == '9'
     }
 }
 

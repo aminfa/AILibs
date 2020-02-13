@@ -16,6 +16,8 @@ dependencies {
     testCompile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.0'
     testCompile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.0'
 
+    testCompile project(":mlplan-weka")
+
 }
 sourceSets {
     test {

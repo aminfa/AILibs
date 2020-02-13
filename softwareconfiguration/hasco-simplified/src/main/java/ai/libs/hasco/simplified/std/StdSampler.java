@@ -22,7 +22,7 @@ public class StdSampler implements ComponentInstanceSampler {
 
     private final Supplier<Double> ng;
 
-    private static int SAMPLES_PER_DRAW = 2;
+    private static int SAMPLES_PER_DRAW = 1;
 
     public StdSampler(ComponentRegistry registry, Supplier<Double> ng) {
         this.ng = ng;
@@ -85,7 +85,7 @@ public class StdSampler implements ComponentInstanceSampler {
                 providerCp = getRandomProvider(interfaceName);
                 provider = providerCp; // this is on purpose.
             } else {
-                providerCp = copyParams(source);
+                providerCp = copyParams(provider);
             }
             groundRequiredInterfaces(provider, providerCp, guard);
             target.getSatisfactionOfRequiredInterfaces().put(name, providerCp);

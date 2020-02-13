@@ -56,7 +56,7 @@ public class StdRefiner implements ComponentRefiner {
         for(ParamRefinementRecord paramRefinement : componentInstance) {
             ComponentInstance trg = componentInstance.getComponentByPath(paramRefinement.getComponentPath());
             process.setComponentToBeRefined(trg);
-            logger.trace("Refining parameter {} of component {} at the path: {}",
+            logger.debug("Refining parameter {} of component {} at the path: {}",
                     paramRefinement.getParamName(),
                     trg.getComponent().getName(),
                     Arrays.toString(paramRefinement.getComponentPath()));
@@ -148,7 +148,7 @@ public class StdRefiner implements ComponentRefiner {
                     " It will go over into phase two: {}",
                     base.displayText(),
                     phase2.displayText());
-            return refineParameters(phase2);
+            return Collections.singletonList(phase2);
         }
         String interfaceName = path.remove(path.size() - 1);
         logger.debug("Refining root {} - refining required inteface `{}` of component along path: {}.",
@@ -191,7 +191,7 @@ public class StdRefiner implements ComponentRefiner {
                         providedIs.get(interfaceName) == null) {
                             // found a required interface, that hasn't been satisfied yet.
                     if(cursor instanceof CIIndexed) {
-                        List<String> path = Arrays.asList(((CIIndexed) cursor).getPath());
+                        List<String> path = new ArrayList<>(Arrays.asList(((CIIndexed) cursor).getPath()));
                         path.add(interfaceName);
                         return path;
                     } else {

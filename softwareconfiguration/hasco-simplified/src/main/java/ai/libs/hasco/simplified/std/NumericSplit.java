@@ -217,7 +217,7 @@ public class NumericSplit {
             logger.warn("Split of {}: Max value is larger than min: [{}, {}).",getDisplayText(),  min, max);
             max = min;
         }
-        if(diff <= minSplitSize/2. || diff == 0. || (isIntegerFlag && diff < 2.0)) {
+        if(diff <= minSplitSize/2. || diff == 0.) {
             /*
              * If half the difference is smaller than the current minSplitSize, then create a fixed value instead of the range.
              * We consider only half the diff,
@@ -243,17 +243,17 @@ public class NumericSplit {
 //                String fixedSplitVal = numberToString(mean);
 //                return Optional.of(fixedSplitVal);
 //            }
-//        } else if(isIntegerFlag && diff < 1.0) {
-//            // if it is integer dont create a split smaller than 1.0
-//            Optional<Long> meanInteger = meanInteger(min, max);
-//            if(meanInteger.isPresent()) {
-//                String intVal = numberToString(meanInteger.get());
-//                return Optional.of(intVal);
-//            } else {
-//                logger.warn("Split of {}: Cannot split [{}, {}) because its difference {} is too small to contain further integer values",
-//                        getDisplayText(), min, max, diff);
-//                return Optional.empty();
-//            }
+        } else if(isIntegerFlag && diff < 1.0) {
+            // if it is integer dont create a split smaller than 1.0
+            Optional<Long> meanInteger = meanInteger(min, max);
+            if(meanInteger.isPresent()) {
+                String intVal = numberToString(meanInteger.get());
+                return Optional.of(intVal);
+            } else {
+                logger.warn("Split of {}: Cannot split [{}, {}) because its difference {} is too small to contain further integer values",
+                        getDisplayText(), min, max, diff);
+                return Optional.empty();
+            }
         } else {
             // Split is legal:
             return Optional.of(rangeToString(min, max));
