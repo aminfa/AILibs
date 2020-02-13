@@ -26,8 +26,9 @@ class SimpleHASCOWekaARFFTest extends Specification {
     static def loadData() {
         long start = System.currentTimeMillis();
         def arffSource
-//        arffSource = "testrsc/datasets/heart.statlog.arff"
-        arffSource = "testrsc/datasets/waveform.arff"
+        arffSource = "testrsc/datasets/heart.statlog.arff"
+        arffSource = "testrsc/datasets/flags.arff"
+//        arffSource = "testrsc/datasets/waveform.arff"
         File file = new File(arffSource);
         data = new Instances(new FileReader(file));
         logger.info("Data read. Time to create dataset object was {}ms", System.currentTimeMillis() - start);
@@ -39,7 +40,7 @@ class SimpleHASCOWekaARFFTest extends Specification {
     static ComponentRegistry registry
 
     static def loadProblem() {
-        def problemFile = "testrsc/wekaproblems/tinytest.json"
+        def problemFile = "testrsc/wekaproblems/autoweka.json"
         loader = new ComponentLoader(new File(problemFile))
         registry = ComponentRegistry.fromComponentLoader(loader)
     }
@@ -56,8 +57,14 @@ class SimpleHASCOWekaARFFTest extends Specification {
             if(!ImplUtil.isValidComponentPrototype(componentInstance)) {
                 logger.warn("Invalid component instance was evaluated: " + componentInstance);
             }
-            def learner = pipelineFactory.getComponentInstantiation(componentInstance)
-            def report = learnerExecutor.execute(learner, split.get(0), split.get(1))
+            def report
+            try {
+                def learner = pipelineFactory.getComponentInstantiation(componentInstance)
+                report = learnerExecutor.execute(learner, split.get(0), split.get(1))
+            } catch(Throwable error) {
+                logger.warn("Error during evaluation of {}:", componentInstance, error)
+                return Optional.empty()
+            }
             if(report.getException() != null) {
                 logger.warn("Error during evaluation of {}:", componentInstance, report.getException())
                 return Optional.empty()

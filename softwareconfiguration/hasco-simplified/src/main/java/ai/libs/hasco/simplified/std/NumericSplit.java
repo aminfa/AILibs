@@ -43,6 +43,7 @@ public class NumericSplit {
         if(currentRange == null) {
             min = minDomain;
             max = maxDomain;
+            currentRange = NumericSplit.rangeToString(min, max);
         } else {
             Matcher matcher = PATTERN_NUMERIC_RANGE.matcher(currentRange);
             if(matcher.matches()) {
@@ -275,7 +276,11 @@ public class NumericSplit {
     }
 
     private Optional<Long> meanInteger(double min, double max) {
-        if(Math.ceil(min) >= max) {
+        double ceilMin = Math.ceil(min);
+        if(ceilMin >= max) {
+            if(ceilMin == max) {
+                return Optional.of((long) ceilMin);
+            }
             return Optional.empty();
         }
         double mean = (max + min) / 2.;
