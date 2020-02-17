@@ -26,6 +26,12 @@ public class CIPhase1 extends CIRoot {
         nextFreeId = new AtomicInteger(1);
         refinementHistory = Collections.EMPTY_LIST;
     }
+//      TODO add a way to create a component n
+//    public static CIPhase1 createRoot(String... requiredInterface) {
+//        if(requiredInterface == null || requiredInterface.length == 0) {
+//            throw new IllegalArgumentException("To create a root provide at least one required interface.");
+//        }
+//    }
 
     public static CIPhase1 createRoot(Component component) {
         logger.info("Creating root component instance of {}.", component.getName());

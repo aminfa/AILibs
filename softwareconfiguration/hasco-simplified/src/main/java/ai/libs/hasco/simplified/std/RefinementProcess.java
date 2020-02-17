@@ -27,7 +27,7 @@ public class RefinementProcess {
         displayName = "Component refinement";
     }
 
-    public String getDisplayName() {
+    public String displayText() {
         return displayName;
     }
 
@@ -52,7 +52,6 @@ public class RefinementProcess {
     }
 
     public boolean setComponentToBeRefined(ComponentInstance nextComponentToBeRefined) {
-
         this.nextComponentToBeRefined = nextComponentToBeRefined;
         logger.trace("The next component to be refined is a: {}", nextComponentToBeRefined.getComponent().getName());
         if(nextComponentToBeRefined instanceof CIIndexed)
@@ -75,7 +74,7 @@ public class RefinementProcess {
 
     private void assertInitialized() {
         if(!isInitialized()) {
-            logger.error("{} - next component instance to be refined has not been set. " +
+            logger.error("{} - the next component instance to be refined has not been set. " +
                     "First call RefinementProcess::setComponentToBeRefined.", displayName);
             throw new IllegalStateException("Not initialized.");
         }
@@ -84,6 +83,7 @@ public class RefinementProcess {
     public boolean refineRequiredInterface(String requiredInterfaceId,
                                            RefinementService refiner) {
         assertInitialized();
+        setDisplayName(String.format("%s required interface %s", displayText(), requiredInterfaceId));
         List<ComponentInstance> children = new ArrayList<>();
         Component baseComponent = nextComponentToBeRefined.getComponent();
         if(baseComponent.getRequiredInterfaces().containsKey(requiredInterfaceId)) {
@@ -91,7 +91,7 @@ public class RefinementProcess {
             if(requiredInterface == null) {
                 logger.error("{} - Component {} has a null entry in the required interface map: {} -> {}",
                         displayName, baseComponent.getName(), requiredInterfaceId, null);
-                throw new NullPointerException("Required interface is null: " + requiredInterfaceId);
+                throw new NullPointerException("The required interface is null: " + requiredInterfaceId);
             }
             boolean refinementDone = refiner.refineRequiredInterface(children, base,
                     nextComponentToBeRefined, requiredInterfaceId, requiredInterface);
@@ -113,7 +113,7 @@ public class RefinementProcess {
                 return false;
             }
         } else {
-            logger.warn("{} - cannot refine required interface {} as it is not declared by the component.",
+            logger.warn("{} - cannot refine the required interface {} as it is not declared by the component.",
                     displayName,
                     requiredInterfaceId);
             return false;
@@ -123,7 +123,7 @@ public class RefinementProcess {
     public boolean refineParameter(String paramName,
                                    RefinementService refiner) {
         assertInitialized();
-
+        setDisplayName(String.format("%s refine param %s", displayText(), paramName));
         List<ComponentInstance> children = new ArrayList<>();
         Component componentType = nextComponentToBeRefined.getComponent();
         Parameter paramToBeRefined = componentType.getParameterWithName(paramName);
@@ -148,8 +148,8 @@ public class RefinementProcess {
         }
         refinements.addAll(children);
         if (refinementDone) {
-            if (logger.isDebugEnabled())
-                logger.debug("{} - " +
+            if (logger.isTraceEnabled())
+                logger.trace("{} - " +
                                 "The refinement of parameter {}.{} has yielded {} many candidates.",
                         displayName,
                         componentType.getName(), paramName, children.size());

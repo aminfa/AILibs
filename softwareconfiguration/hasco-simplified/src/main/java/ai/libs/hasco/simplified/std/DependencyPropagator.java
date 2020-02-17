@@ -2,7 +2,6 @@ package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.*;
 import ai.libs.jaicore.basic.sets.Pair;
-import it.unimi.dsi.fastutil.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +13,7 @@ public class DependencyPropagator {
 
     private final ComponentInstance instance;
 
-    private List<Dependency> unsatisfiableDependencies = new ArrayList<>();
+    private List<Dependency> unsatisfiableDependencies;
 
     private Map<Parameter, IParameterDomain> paramValues;
 
@@ -67,7 +66,7 @@ public class DependencyPropagator {
         if(paramValues.containsKey(param) && paramValues.get(param) != null) {
             return paramValues.get(param);
         }
-        IParameterDomain valueDomain = DomainHandler.strToParamDomain(param.getDefaultDomain(),
+        IParameterDomain valueDomain = ParamDomainHandler.strToParamDomain(param.getDefaultDomain(),
                 instance.getParameterValue(param));
         paramValues.put(param, valueDomain);
         return valueDomain;
@@ -78,7 +77,7 @@ public class DependencyPropagator {
         if(param  == null) {
             throw new IllegalStateException(getDisplayText() + ". Component doesn't define parameter: " + paramName);
         }
-        IParameterDomain newValueDomain = DomainHandler.strToParamDomain(param.getDefaultDomain(), newValue);
+        IParameterDomain newValueDomain = ParamDomainHandler.strToParamDomain(param.getDefaultDomain(), newValue);
         setParameterValue(param, newValueDomain);
     }
 
@@ -97,7 +96,7 @@ public class DependencyPropagator {
             return;
         }
         paramValues.forEach((param, newDomain) -> {
-            String stringValue = DomainHandler.getStringValue(newDomain);
+            String stringValue = ParamDomainHandler.getStringValue(newDomain);
             instance.getParameterValues().put(param.getName(), stringValue);
         });
     }
@@ -108,7 +107,7 @@ public class DependencyPropagator {
             boolean premiseFulfilled = isPremiseFulfilled(dependency.getPremise());
             if(premiseFulfilled) {
                 if(!isConclusionSatisfiable(dependency.getConclusion())) {
-                    unsatisfiableDependencies.add(dependency);
+                    getUnsatisfiableDependencies().add(dependency);
                 }
                 if(hasUnsatisfiableDependencies()) {
                     continue;
@@ -128,7 +127,7 @@ public class DependencyPropagator {
 
     private void propagateCondition(Parameter param, IParameterDomain newDomain) {
         IParameterDomain value = getCurrentParamValue(param);
-        IParameterDomain intersection = DomainHandler.intersection(newDomain, value);
+        IParameterDomain intersection = ParamDomainHandler.intersection(newDomain, value);
         setParameterValue(param, intersection);
     }
 

@@ -74,8 +74,8 @@ public class CIRoot extends CIIndexed implements Comparable<CIRoot> {
                 String witnessParamValue = witness.getParameterValue(paramName);
                 Parameter paramType = instance.getComponent().getParameterWithName(paramName);
                 IParameterDomain domain = paramType.getDefaultDomain();
-                IParameterDomain instanceParamDom = DomainHandler.strToParamDomain(domain, paramValue);
-                IParameterDomain witnessParamDom = DomainHandler.strToParamDomain(domain, witnessParamValue);
+                IParameterDomain instanceParamDom = ParamDomainHandler.strToParamDomain(domain, paramValue);
+                IParameterDomain witnessParamDom = ParamDomainHandler.strToParamDomain(domain, witnessParamValue);
                 if(!instanceParamDom.subsumes(witnessParamDom)){
                     return false;
                 }

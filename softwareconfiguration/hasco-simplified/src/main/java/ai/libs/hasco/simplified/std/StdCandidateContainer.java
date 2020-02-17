@@ -8,15 +8,17 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 public class StdCandidateContainer implements ClosedList, OpenList, Comparator<CIRoot> {
+
+    private final static Logger logger = getLogger(StdCandidateContainer.class);
 
     private final PriorityQueue<CIRoot> queue;
 
     private final List<CIRoot> firstRoots = new ArrayList<>();
 
 //    private final EvaluationCache evaluationCache;
-
-    private final static Logger logger = LoggerFactory.getLogger(StdCandidateContainer.class);
 
     public StdCandidateContainer() {
 //        this.evaluationCache = new EvaluationCache();

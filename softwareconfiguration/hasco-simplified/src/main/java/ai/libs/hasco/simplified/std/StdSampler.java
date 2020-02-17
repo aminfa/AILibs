@@ -7,10 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class StdSampler implements ComponentInstanceSampler {
 
@@ -161,19 +158,19 @@ public class StdSampler implements ComponentInstanceSampler {
             if(splits.isEmpty()) {
                 logger.warn("Couldn't create split random draws: {}/{}/{}. " +
                         "\nFalling back to random draw.", ns.getPreSplitRange(), splitCount, minSplitSize);
-                return selectRandomValue(DomainHandler.strToParamDomain(param.getDefaultDomain(), currentVal));
+                return selectRandomValue(ParamDomainHandler.strToParamDomain(param.getDefaultDomain(), currentVal));
             }
 
             String randomParamValue = splits.get((int) (splits.size() * ng.get()));
             return randomParamValue;
         } else {
-            return selectRandomValue(DomainHandler.strToParamDomain(param.getDefaultDomain(), currentVal));
+            return selectRandomValue(ParamDomainHandler.strToParamDomain(param.getDefaultDomain(), currentVal));
         }
     }
 
     private String selectRandomCategory(Parameter param, String val) {
         CategoricalParameterDomain dom = (CategoricalParameterDomain)
-                DomainHandler.strToParamDomain(param.getDefaultDomain(), val);
+                ParamDomainHandler.strToParamDomain(param.getDefaultDomain(), val);
         if(dom.getValues().length == 0) {
             throw new IllegalArgumentException("Parameter " + param + " with value "
                     + val + " has not categories left to choose from.");
@@ -183,24 +180,7 @@ public class StdSampler implements ComponentInstanceSampler {
     }
 
     private String selectRandomValue(IParameterDomain domain) {
-        return DomainHandler.newHandler(
-                (NumericParameterDomain numDomain) -> {
-                    if (numDomain.isInteger()) {
-                        if ((int) (numDomain.getMax() - numDomain.getMin()) > 0) {
-                            return String.valueOf((int)
-                                    (ng.get() * ((int) (numDomain.getMax() - numDomain.getMin())) + numDomain.getMin()));
-                        } else {
-                            return String.valueOf((long) numDomain.getMin());
-                        }
-                    } else {
-                        return String.valueOf(ng.get() * (numDomain.getMax() - numDomain.getMin()) + numDomain.getMin());
-                    }
-                },
-                (CategoricalParameterDomain catDom) -> {
-                    String[] values = catDom.getValues();
-                    return values[(int) (ng.get() * values.length)];
-                }
-        ).handle(domain);
+        return ParamDomainHandler.selectRandomValue(domain, ng);
     }
 
     private ComponentInstance getRandomProvider(String requiredInteface) {

@@ -8,8 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * This class is there to decide what refinement operation should be done.
@@ -56,7 +54,8 @@ public class StdRefiner implements ComponentRefiner {
         for(ParamRefinementRecord paramRefinement : componentInstance) {
             ComponentInstance trg = componentInstance.getComponentByPath(paramRefinement.getComponentPath());
             process.setComponentToBeRefined(trg);
-            logger.debug("Refining parameter {} of component {} at the path: {}",
+            if(logger.isTraceEnabled())
+                logger.debug("Refining parameter {} of component {} at the path: {}",
                     paramRefinement.getParamName(),
                     trg.getComponent().getName(),
                     Arrays.toString(paramRefinement.getComponentPath()));
@@ -77,8 +76,8 @@ public class StdRefiner implements ComponentRefiner {
             logger.warn("The refinement process for component {} did not finish," +
                     " however refinements were created.\nHave a look at the refinement service used: {}", componentInstance.displayText(), refService.getClass().getSimpleName());
         } else {
-            logger.info("Refinement of component {} yielded {} many refinements.",
-                    componentInstance.displayText(), refinements.size());
+            logger.info("{}: yielded {} many refinements.",
+                    process.displayText(), refinements.size());
         }
         boolean nonPhaseTwoRefinementsPresent = refinements
                 .stream()
@@ -107,30 +106,8 @@ public class StdRefiner implements ComponentRefiner {
                 propagator.propagateNewParameterValues();
             }
         }
-        // Previous implementation did not have any dependency value propagation
-//        refinements.stream()
-//                .map()
-//                .filter(ci -> {
-//                    CIPhase2 ciPhase2 = (CIPhase2) ci;
-//                    Optional<ParamRefinementRecord> previousRecord = ciPhase2.getPreviousRecord();
-//                    if(previousRecord.isPresent()) {
-//                        String[] refinedComponentPath = previousRecord.get().getComponentPath();
-//                        ComponentInstance refinedComponent = ciPhase2.getComponentByPath(refinedComponentPath);
-//                        boolean validComponentPrototype = ImplUtil.isValidComponentPrototype(refinedComponent);
-//                        if(!validComponentPrototype && logger.isTraceEnabled()) {
-//                            logger.trace("Param refined component, {}, " +
-//                                    "invalidate param dependencies:\n{}",
-//                                    refinedComponent.getComponent().getName(), refinedComponent.getParameterValues());
-//                        }
-//                        return !validComponentPrototype;
-//                    } else {
-//                        logger.warn("The refined parameter has no previous record.");
-//                        return true;
-//                    }
-//                })
-//                .collect(Collectors.toList());
         if(!inValidComponentInstances.isEmpty()) {
-            logger.debug("Removed {} many refinements because they violate parameter dependencies.", inValidComponentInstances.size());
+            logger.info("Removed {} many refinements because they violate parameter dependencies.", inValidComponentInstances.size());
             refinements.removeAll(inValidComponentInstances);
         }
         return refinements;
@@ -151,7 +128,8 @@ public class StdRefiner implements ComponentRefiner {
             return Collections.singletonList(phase2);
         }
         String interfaceName = path.remove(path.size() - 1);
-        logger.debug("Refining root {} - refining required inteface `{}` of component along path: {}.",
+        if(logger.isTraceEnabled())
+            logger.trace("Refining root {} - refining required inteface `{}` of component along path: {}.",
                 base.displayText(), interfaceName, path);
         ComponentInstance trg = base.getComponentByPath(path);
         RefinementProcess process = new RefinementProcess(base);
@@ -164,6 +142,9 @@ public class StdRefiner implements ComponentRefiner {
         if(refinements.isEmpty()) {
             logger.info("No refinements made to {}, dropping it", base.displayText());
             return refinements;
+        } else {
+            logger.info("{}: yielded {} many refinements.",
+                    process.displayText(), refinements.size());
         }
         CIPhase2 phase2 = new CIPhase2(base);
         logger.debug("Adding a Phase2 (param refinement) as a child: {}", phase2.displayText());
