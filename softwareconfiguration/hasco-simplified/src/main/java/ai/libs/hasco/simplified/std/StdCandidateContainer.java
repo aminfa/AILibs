@@ -7,9 +7,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+@org.springframework.stereotype.Component
 public class StdCandidateContainer implements ClosedList, OpenList, Comparator<CIRoot> {
 
     private final static Logger logger = getLogger(StdCandidateContainer.class);
@@ -18,10 +20,9 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
 
     private final List<CIRoot> firstRoots = new ArrayList<>();
 
-//    private final EvaluationCache evaluationCache;
+    private BiConsumer<ComponentInstance, Double> sampleConsumer = (componentInstance, aDouble) -> {};
 
     public StdCandidateContainer() {
-//        this.evaluationCache = new EvaluationCache();
         this.queue = new PriorityQueue<>(this);
     }
 
@@ -38,11 +39,13 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
         }
     }
 
+    public void setSampleConsumer(BiConsumer<ComponentInstance, Double> sampleConsumer) {
+        this.sampleConsumer = sampleConsumer;
+    }
 
     @Override
-    public void insert(ComponentInstance candidate,
-                       List<ComponentInstance> witnesses, List<Optional<Double>> results) {
-
+    public void close(ComponentInstance candidate,
+                      List<ComponentInstance> witnesses, List<Optional<Double>> results) {
         CIRoot root = castToRoot(candidate);
         EvalReport report;
         if(root.hasBeenEvaluated()) {
@@ -53,6 +56,13 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
             root.setEvalReport(report);
         }
         queue.add(root);
+
+        for (int i = 0; i < witnesses.size(); i++) {
+            if(results.get(i).isPresent()) {
+                sampleConsumer.accept(witnesses.get(i),
+                        results.get(i).get());
+            }
+        }
     }
 
     public void insertRoot(ComponentInstance root) {

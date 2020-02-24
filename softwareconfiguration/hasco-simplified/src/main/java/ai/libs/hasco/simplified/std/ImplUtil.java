@@ -7,7 +7,7 @@ import ai.libs.jaicore.basic.sets.Pair;
 import java.util.*;
 import java.util.function.Supplier;
 
-class ImplUtil {
+public class ImplUtil {
 
     static boolean binaryDecision(Supplier<Double> numberGenerator) {
         return numberGenerator.get() > 0.5d;
@@ -26,7 +26,7 @@ class ImplUtil {
      * @param ci The component instance to be verified.
      * @return Returns true iff all dependency conditions hold.
      */
-    static boolean isValidComponentPrototype(final ComponentInstance ci) {
+    public static boolean isValidComponentPrototype(final ComponentInstance ci) {
         Map<Parameter, IParameterDomain> refinedDomainMap = new HashMap<>();
 
         for (Parameter param : ci.getComponent().getParameters()) {

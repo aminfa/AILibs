@@ -32,8 +32,11 @@ public class EvalReport implements Comparable<EvalReport> {
         OptionalDouble averageScore = witnessScore.stream()
                 .filter(Optional::isPresent)
                 .mapToDouble(Optional::get)
-                .average();
-        score = Optional.ofNullable(averageScore.isPresent() ? averageScore.getAsDouble() : null);
+                .min();
+        score = Optional.ofNullable(
+                    averageScore.isPresent() ?
+                        averageScore.getAsDouble() :
+                        null);
     }
 
     public Optional<Double> getScore() {

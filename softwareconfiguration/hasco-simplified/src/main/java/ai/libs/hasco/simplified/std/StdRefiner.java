@@ -6,6 +6,7 @@ import ai.libs.hasco.simplified.ComponentRegistry;
 import ai.libs.hasco.simplified.RefinementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
 
@@ -20,6 +21,7 @@ import java.util.*;
  *      If all required interfaces are set it will instead create a phase 2 component instance.
  *
  */
+@org.springframework.stereotype.Component
 public class StdRefiner implements ComponentRefiner {
 
     private final static Logger logger = LoggerFactory.getLogger(StdRefiner.class);
@@ -30,7 +32,7 @@ public class StdRefiner implements ComponentRefiner {
         this.refService = new StdRefinementService(registry);
     }
 
-    // Used for testing
+    @Autowired
     public StdRefiner(RefinementService refService) {
         this.refService = refService;
     }
@@ -97,8 +99,8 @@ public class StdRefiner implements ComponentRefiner {
             propagator.propagateDependencies();
             if(propagator.hasUnsatisfiableDependencies()) {
                 inValidComponentInstances.add(refinement);
-                if(logger.isTraceEnabled())
-                    logger.trace("Dependencies of refinement of {} are not satisfiable. " +
+                if(logger.isDebugEnabled())
+                    logger.debug("Dependencies of refinement of {} are not satisfiable. " +
                             "\nComponent {} with param values: {}\n has unsatisfiable param dependencies: {}", ciPhase2,
                             propagator.getInstance().getComponent().getName(), propagator.getInstance().getParameterValues(),
                             propagator.getUnsatisfiableDependencies());

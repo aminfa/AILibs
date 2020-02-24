@@ -1,12 +1,9 @@
 package ai.libs.hasco.simplified;
 
-import ai.libs.hasco.model.Component;
 import ai.libs.hasco.serialization.ComponentLoader;
-import ai.libs.hasco.simplified.std.StdHASCO;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class HASCOTester {
 

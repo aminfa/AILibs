@@ -5,11 +5,13 @@ import ai.libs.hasco.simplified.ComponentRegistry;
 import ai.libs.hasco.simplified.RefinementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.ComponentScan;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.*;
 
+@org.springframework.stereotype.Component
 public class StdRefinementService implements RefinementService {
 
     private final static Logger logger = LoggerFactory.getLogger(StdRefinementService.class);

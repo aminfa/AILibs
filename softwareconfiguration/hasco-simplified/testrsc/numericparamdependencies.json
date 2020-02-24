@@ -40,7 +40,7 @@
     } ],
     "dependencies" : [
       {
-        "pre" : "a2 in {true}",
+        "pre" : "a1 in {true}",
         "post" : "a3 in [-10,5]"
       },
       {

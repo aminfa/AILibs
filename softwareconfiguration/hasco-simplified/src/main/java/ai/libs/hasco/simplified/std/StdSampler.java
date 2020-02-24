@@ -13,13 +13,13 @@ public class StdSampler implements ComponentInstanceSampler {
 
     private final static Logger logger = LoggerFactory.getLogger(StdSampler.class);
 
-    private static boolean DRAW_NUMERIC_SPLIT_MEANS = false;
-
     private final ComponentRegistry registry;
 
     private final Supplier<Double> ng;
 
-    private static int SAMPLES_PER_DRAW = 1;
+    private int samplesPerDraw = 4;
+
+    private boolean drawNumericSplitMeans = false;
 
     public StdSampler(ComponentRegistry registry, Supplier<Double> ng) {
         this.ng = ng;
@@ -40,13 +40,14 @@ public class StdSampler implements ComponentInstanceSampler {
         int alreadySampleSize = 0;
         if(root.hasBeenEvaluated()) {
             alreadySampleSize = root.getEvalReport().getWitnessScores().size();
+            logger.debug("Refinement {} already has {} many samples.", source, alreadySampleSize);
         }
         List<ComponentInstance> cis = new ArrayList<>();
-        for (int i = 0; i < SAMPLES_PER_DRAW - alreadySampleSize; i++) {
+        for (int i = 0; i < samplesPerDraw - alreadySampleSize; i++) {
+            logger.debug("Drawing a new sample for {} and grounding required interfaces and parameters.", source);
             ComponentInstance target = copyParams(source);
             // set all required interfaces, using an index guard
             groundRequiredInterfaces(source, target, new HashSet<>());
-
             // parameterize all remaining parameters, iteratively using an index guard
             // remaining parameter ~ not completely set
             groundParameters(target);
@@ -138,7 +139,7 @@ public class StdSampler implements ComponentInstanceSampler {
         if(ns.isValueFixed()) {
             // already fixed:
             return String.valueOf(ns.getFixedVal());
-        } else if(DRAW_NUMERIC_SPLIT_MEANS){
+        } else if(drawNumericSplitMeans){
             Optional<ParameterRefinementConfiguration> paramRefConfigOpt = registry.getParamRefConfig(component, param);
             double minSplitSize;
             int splitCount;
@@ -191,4 +192,11 @@ public class StdSampler implements ComponentInstanceSampler {
         return ci;
     }
 
+    public void setSamplesPerDraw(int samplesPerDraw) {
+        this.samplesPerDraw = samplesPerDraw;
+    }
+
+    public void setDrawNumericSplitMeans(boolean drawNumericSplitMeans) {
+        this.drawNumericSplitMeans = drawNumericSplitMeans;
+    }
 }

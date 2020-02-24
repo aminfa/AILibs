@@ -3,12 +3,16 @@ package ai.libs.hasco.simplified.schedulers;
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.simplified.ClosedList;
 import ai.libs.hasco.simplified.ComponentEvaluator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 public class ParallelRefParallelSampleScheduler implements EvalExecScheduler {
+
+    private final static Logger logger = LoggerFactory.getLogger(ParallelRefParallelSampleScheduler.class);
 
     private ExecutorService execService;
 
@@ -24,13 +28,16 @@ public class ParallelRefParallelSampleScheduler implements EvalExecScheduler {
     }
 
     private void shutDownRunningTasks() {
+        logger.info("Shutting down all running and scheduled evaluations and recreating the pool.");
         execService.shutdownNow();
         execService = serviceSupplier.get();
     }
 
     @Override
-    public void scheduleAndExecute(EvalQueue queue, ComponentEvaluator evaluator, ClosedList closedList) throws InterruptedException {
+    public void scheduleAndExecute(EvalQueue queue, ComponentEvaluator evaluator, ClosedList closedList)
+            throws InterruptedException {
         Objects.requireNonNull(queue, "Queue is null");
+        logger.info("Starting PRPS evaluation for {} samples in {} batches.", queue.size(), queue.getBatches().size());
         List<SampleBatch> batches = queue.getBatches();
         if(batches.isEmpty()) {
             throw new IllegalArgumentException("Queue is empty");
@@ -39,15 +46,15 @@ public class ParallelRefParallelSampleScheduler implements EvalExecScheduler {
         Objects.requireNonNull(closedList);
         try{
             submitAllSamples(batches, evaluator);
+            logger.info("Submitted all {} samples for evaluation. Waiting for their termination.", queue.size());
             awaitTermination(batches);
+            logger.info("All {} samples have been evaluated. Gathering results..", queue.size());
             gatherResults(batches, closedList);
         } catch (InterruptedException ex) {
             shutDownRunningTasks();
             throw new InterruptedException(ex.getMessage());
         }
     }
-
-
 
     private void submitAllSamples(List<SampleBatch> batches, ComponentEvaluator evaluator) {
         Objects.requireNonNull(execService, "Executor service is null");
@@ -70,7 +77,6 @@ public class ParallelRefParallelSampleScheduler implements EvalExecScheduler {
         }
     }
 
-
     public void awaitTermination(List<SampleBatch> batches) throws InterruptedException {
         boolean hasNext = true;
         while(hasNext) {
@@ -80,7 +86,8 @@ public class ParallelRefParallelSampleScheduler implements EvalExecScheduler {
                 hasNext = true;
                 continue;
             }
-            if(unstartedSamplesExist(batches)) {
+            if(unFinishedSamplesExist(batches)) {
+                logger.debug("No sample is currently being processes. Halting for a ms and then checking again.");
                 sleepMilliSecond();
                 hasNext = true;
             }
@@ -91,9 +98,9 @@ public class ParallelRefParallelSampleScheduler implements EvalExecScheduler {
         Thread.sleep(1);
     }
 
-    private boolean unstartedSamplesExist(List<SampleBatch> batches) {
+    private boolean unFinishedSamplesExist(List<SampleBatch> batches) {
         for (SampleBatch batch : batches) {
-            if(batch.hasUnstartedSamples()) {
+            if(batch.hasUnstartedSamples() || batch.isRunning()) {
                 return true;
             }
         }
@@ -104,6 +111,7 @@ public class ParallelRefParallelSampleScheduler implements EvalExecScheduler {
         long sleepTime = Long.MAX_VALUE;
         SampleBatch batch = null;
         int sampleIndex = 0;
+        int batchIndex = 0, batchIndexCursor = 0;
         for (SampleBatch cursor : batches) {
             Optional<Integer> index = cursor.sampleIndexWithSmallestTimeLeft();
             if(index.isPresent()) {
@@ -117,8 +125,10 @@ public class ParallelRefParallelSampleScheduler implements EvalExecScheduler {
                     sleepTime = iTtl;
                     batch = cursor;
                     sampleIndex = i;
+                    batchIndex = batchIndexCursor;
                 }
             }
+            batchIndexCursor++;
             if(sleepTime <= 0) {
                 break;
             }
@@ -126,19 +136,28 @@ public class ParallelRefParallelSampleScheduler implements EvalExecScheduler {
         if(batch == null) {
             return false;
         }
-        waitFor(batch, sampleIndex, sleepTime);
+        if(logger.isTraceEnabled())
+            logger.trace("Termination of sample {} of batch {} is due next and has {} many seconds left.",
+                    sampleIndex, batchIndex, sleepTime);
+        waitFor(batch, batchIndex, sampleIndex, sleepTime);
         return true;
     }
 
-    void waitFor(SampleBatch batch, int sampleIndex, long sleepTime) throws InterruptedException {
+    void waitFor(SampleBatch batch, int batchIndex, int sampleIndex, long sleepTime) throws InterruptedException {
         Future<Optional<Double>> future = batch.getFuture(sampleIndex);
         Optional<Double> result;
         try {
             result = future.get(sleepTime, TimeUnit.MILLISECONDS);
         } catch (ExecutionException e) {
+            logger.warn("Evaluation of sample {} of batch {} resulted in an execution exception.", sampleIndex, batchIndex, e);
             result = Optional.empty();
         } catch (TimeoutException e) {
             // timed out:
+            logger.info("Interrupting evaluation of sample {} of batch {}." +
+                    " Its running for {} ms out of {} ms max time.",
+                    sampleIndex, batchIndex,
+                    batch.getTimer(sampleIndex).runTime(),
+                    batch.getTimer(sampleIndex).maxTime());
             future.cancel(true);
             batch.getTimer(sampleIndex).interrupt();
             result = Optional.empty();
@@ -150,7 +169,15 @@ public class ParallelRefParallelSampleScheduler implements EvalExecScheduler {
     private void gatherResults(List<SampleBatch> batches, ClosedList closedList) {
         for (SampleBatch batch : batches) {
             if(batch.isRunning()) {
-                throw new IllegalStateException("The batch is still running");
+                logger.error("While gathering results, a batch is still running.");
+                for (int i = 0; i < batch.getSamples().size(); i++) {
+                    Timer timer = batch.getTimer(i);
+                    if(timer.isRunning()) {
+                        logger.error("Sample {} is still running. Start time: {}, Max time: {}, endFlag: {}, interruptFlag: {}",
+                                i, timer.getTimeStarted(), timer.maxTime(), timer.hasEnded(), timer.hasBeenInterrupted());
+                    }
+                }
+//                throw new IllegalStateException("The batch is still running");
             }
             gatherResults(batch, closedList);
         }
@@ -163,17 +190,18 @@ public class ParallelRefParallelSampleScheduler implements EvalExecScheduler {
         for (int index = 0; index < batch.getSamples().size(); index++) {
             ComponentInstance sample = batch.getSample(index);
             if(!batch.getTimer(index).hasFinished()) {
-                throw new IllegalStateException("Sample " + index + " has not finished yet.");
+                logger.warn("Sample " + index + " has not finished yet.");
             }
+//            Samples that have timeout are included with empty results
             if(batch.getTimer(index).hasBeenInterrupted()) {
                 continue;
             }
             Optional<Double> result = batch.getResult(index);
             Objects.requireNonNull(result);
-            evaluatedSamples.add(batch.getSample(index));
+            evaluatedSamples.add(sample);
             results.add(result);
         }
-        closedList.insert(refinement, evaluatedSamples, results);
+        closedList.close(refinement, evaluatedSamples, results);
     }
 }
 

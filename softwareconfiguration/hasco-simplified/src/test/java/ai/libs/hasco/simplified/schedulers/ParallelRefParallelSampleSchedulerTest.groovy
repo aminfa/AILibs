@@ -58,9 +58,9 @@ class ParallelRefParallelSampleSchedulerTest extends Specification {
             }
 
             @Override
-            void insert(ComponentInstance componentInstance,
-                        List<ComponentInstance> witnesses,
-                        List<Optional<Double>> results) {
+            void close(ComponentInstance componentInstance,
+                       List<ComponentInstance> witnesses,
+                       List<Optional<Double>> results) {
                 receivedResults += witnesses.size()
             }
         }

@@ -85,4 +85,5 @@ class Timer {
     boolean isRunning() {
         return hasStarted() && !hasFinished();
     }
+
 }

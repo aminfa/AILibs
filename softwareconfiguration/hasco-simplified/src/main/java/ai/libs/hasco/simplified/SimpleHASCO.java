@@ -1,13 +1,15 @@
 package ai.libs.hasco.simplified;
 
 import ai.libs.hasco.model.ComponentInstance;
+import ai.libs.hasco.simplified.schedulers.EvalExecScheduler;
+import ai.libs.hasco.simplified.schedulers.EvalQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class SimpleHASCO {
 
@@ -16,39 +18,40 @@ public class SimpleHASCO {
     private OpenList openList;
 
     private ClosedList closedList;
-    
+
     private ComponentEvaluator evaluator;
+
+    private EvalExecScheduler scheduler;
 
     private ComponentInstanceSampler sampler;
 
     private ComponentRefiner refiner;
 
-    public SimpleHASCO(OpenList openList, ClosedList closedList, ComponentEvaluator evaluator, ComponentInstanceSampler sampler, ComponentRefiner refiner) {
+    private int minEvalQueueSize = 8;
+
+    private long refinementEvalMaxTime = 8000L,
+                     sampleEvalMaxTime = 2000L;
+
+
+    public SimpleHASCO(OpenList openList, ClosedList closedList,
+                       ComponentEvaluator evaluator, EvalExecScheduler scheduler,
+                       ComponentInstanceSampler sampler, ComponentRefiner refiner) {
         this.openList = openList;
         this.closedList = closedList;
         this.evaluator = evaluator;
+        this.scheduler = scheduler;
         this.sampler = sampler;
         this.refiner = refiner;
     }
 
-    private void drawSamplesAndEvaluate(ComponentInstance prototype, ComponentInstance refinement) throws InterruptedException {
+    private void drawSamples(ComponentInstance refinement, EvalQueue queue) {
         List<ComponentInstance> samples = sampler.drawSamples(refinement);
-        List<Optional<Double>> results = new ArrayList<>(samples.size());
-        for (ComponentInstance sample : samples) {
-            Optional<Double> evalResult;
-            /*
-             * Evaluate this sample for the first time:
-             */
-            evalResult = evaluator.eval(sample);
-            results.add(evalResult);
-            /*
-             * Check if the thread is interrupted while the evaluator was processing
-             */
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
+        logger.info("Sampling refinement {} resulted in {} many samples.", refinement, samples.size());
+        if(samples.isEmpty()) {
+            closedList.close(refinement, Collections.emptyList(), Collections.emptyList());
+        } else {
+            queue.enqueue(refinement, samples);
         }
-        closedList.insert(refinement, samples, results);
     }
 
     /**
@@ -56,19 +59,21 @@ public class SimpleHASCO {
      * The candidate is refined and if necessary, the refined component instances are sampled and evaluated. <br>
      * The results are attached to the component instance and added to the closed list.
      *
-     * @throws InterruptedException thrown, if the current thread is interrupted. This method checks for interruption while it evaluates candidate samples.
      * @param prototype The prototype to be processed.
+     * @param queue
      */
-    private void refine(ComponentInstance prototype) throws InterruptedException {
+    private void refine(ComponentInstance prototype, EvalQueue queue) {
+        Objects.requireNonNull(prototype, "Prototype is null");
         List<ComponentInstance> refinements = refiner.refine(prototype);
         Objects.requireNonNull(refinements, "Refiner returned null. Instead return empty list.");
+        logger.info("Refinement process yielded {} many refinements.", refinements.size());
         for(ComponentInstance refinedComponent : refinements) {
-            drawSamplesAndEvaluate(prototype, refinedComponent);
+            drawSamples(refinedComponent, queue);
         }
     }
 
     /**
-     * Processes a single candidate from the open list. <br>
+     * Processes candidates from the open list until . <br>
      * The candidate is removed from the list, then refined into more components instances. <br>
      * If necessary, the refined component instances are sampled and evaluated. <br>
      * The results are attached to the component instance and added to the open list again.
@@ -82,8 +87,17 @@ public class SimpleHASCO {
         if(!openList.hasNext()) {
             return false;
         }
-        ComponentInstance prototype = openList.popNext();
-        refine(prototype);
+        EvalQueue queue = new EvalQueue(refinementEvalMaxTime, sampleEvalMaxTime);
+        int size = queue.size();
+        while(openList.hasNext() && (size < minEvalQueueSize || size == 0)) {
+            ComponentInstance prototype = openList.popNext();
+            refine(prototype, queue);
+            size = queue.size();
+        }
+        if(queue.size() == 0) {
+            return false;
+        }
+        scheduler.scheduleAndExecute(queue, evaluator, closedList);
         return true;
     }
 
@@ -92,9 +106,17 @@ public class SimpleHASCO {
      *
      * @throws InterruptedException thrown when the current thread is interrupted.
      */
-    public void runSequentially() throws InterruptedException{
-        while(openList.hasNext()) {
-            step();
+    public void runAll() throws InterruptedException{
+        while(step()) {
+            if(Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+        }
+    }
+
+    public void runUntil(long duration, TimeUnit unit) throws InterruptedException {
+        long threshold = System.currentTimeMillis() + unit.toMillis(duration);
+        while(System.currentTimeMillis() <= threshold && step()) {
             if(Thread.interrupted()) {
                 throw new InterruptedException();
             }
@@ -109,34 +131,15 @@ public class SimpleHASCO {
         return closedList;
     }
 
-    //    public void runInParallel(int numberOfThreads) throws InterruptedException, ExecutionException {
-//        if(numberOfThreads <= 1) {
-//            runSequentially();
-//            return;
-//        }
-//        ExecutorService runner = Executors.newFixedThreadPool(numberOfThreads);
-//        List<Callable<Object>> steps = new ArrayList<>();
-//        while(openList.hasNext()) {
-//            synchronized (this) {
-//                for (int i = 0; i < numberOfThreads && openList.hasNext(); i++) {
-//                    ComponentInstance prototype = openList.popNext();
-//                    steps.add(() -> {this.process(prototype);return null;});
-//                }
-//                List<Future<Object>> futures = runner.invokeAll(steps);
-//                for (Future future: futures) {
-//                    try {
-//                        if(future.isCancelled())
-//                        future.get();
-//                        future.isCancelled();
-//                    } catch (ExecutionException e) {
-//                        e.printStackTrace();
-//                    } catch ()
-//
-//                }
-//            }
-//            if(Thread.interrupted()) {
-//                throw new InterruptedException();
-//            }
-//        }
-//    }
+    public void setMinEvalQueueSize(int minEvalQueueSize) {
+        this.minEvalQueueSize = minEvalQueueSize;
+    }
+
+    public void setRefinementEvalMaxTime(long refinementEvalMaxTime) {
+        this.refinementEvalMaxTime = refinementEvalMaxTime;
+    }
+
+    public void setSampleEvalMaxTime(long sampleEvalMaxTime) {
+        this.sampleEvalMaxTime = sampleEvalMaxTime;
+    }
 }

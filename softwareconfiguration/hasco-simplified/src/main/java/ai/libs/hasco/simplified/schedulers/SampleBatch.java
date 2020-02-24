@@ -21,7 +21,8 @@ class SampleBatch implements Iterator<Integer> {
 
     AtomicInteger sampleCursor = new AtomicInteger(0);
 
-    public SampleBatch(ComponentInstance refinement, List<ComponentInstance> samples, long refinementMaxTime, long sampleMaxTime) {
+    public SampleBatch(ComponentInstance refinement, List<ComponentInstance> samples,
+                       long refinementMaxTime, long sampleMaxTime) {
         this.batchTimer = new Timer(refinementMaxTime);
         this.refinement = refinement;
         this.samples = samples;
@@ -72,7 +73,7 @@ class SampleBatch implements Iterator<Integer> {
 
 
     synchronized boolean hasUnstartedSamples() {
-        if(!batchTimer.hasStarted()) {
+        if(samples.size() > 0 && !batchTimer.hasStarted()) {
             return true;
         } else {
             for (Timer sampleTimer : sampleTimers) {

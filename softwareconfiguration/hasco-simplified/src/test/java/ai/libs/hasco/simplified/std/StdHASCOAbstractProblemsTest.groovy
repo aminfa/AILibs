@@ -24,7 +24,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
             The evaluator will guide the path of the runner, by prioritizing certain components over others.
             This way we can check if the runner is indeed running through the search space the way intended.
         """
-        StdHASCO hasco = new StdHASCO()
+        SimpleHASCOStdBuilder hasco = new SimpleHASCOStdBuilder()
         hasco.seed = seed
         hasco.requiredInterface = requiredInterfaceName
         hasco.registry = compsRegistry
@@ -50,14 +50,14 @@ class StdHASCOAbstractProblemsTest extends Specification {
             return Optional.of(score)
         }
         hasco.init()
-        def runner = hasco.runner
-        def openList = hasco.openList
+        def runner = hasco.simpleHASCOInstance
+        def openList = hasco.stdCandidateContainer
 
         then:"""
            No solution has been seed yet.
            The open-list has two root components A and B with nothing refined yet.
         """
-        ! hasco.getBestSeenCandidate().isPresent()
+        ! hasco.bestCandidateCache.getBestSeenCandidate().isPresent()
         openList.queue.size()  == 2
 
         when:
@@ -80,8 +80,8 @@ class StdHASCOAbstractProblemsTest extends Specification {
         """
             Run to the end.
         """
-        runner.runSequentially()
-        def s = hasco.bestSeenCandidate.get()
+        runner.runAll()
+        def s = hasco.bestCandidateCache.bestSeenCandidate.get()
 
         then:
         """
@@ -91,7 +91,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         s.component.name == 'A'
         s.parameterValues['a'] == 'true'
         s.parameterValues['b'] == 'v1'
-        hasco.bestSeenScore.get() == 1.0
+        hasco.bestCandidateCache.bestSeenScore.get() == 1.0
     }
 
     def "test difficult problem" () {
@@ -103,7 +103,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         def evalCounter = new AtomicInteger(0);
 
         when:
-        StdHASCO hasco = new StdHASCO()
+        SimpleHASCOStdBuilder hasco = new SimpleHASCOStdBuilder()
         hasco.seed = seed
         hasco.requiredInterface = requiredInterface
         hasco.registry = compsRegistry
@@ -141,11 +141,11 @@ class StdHASCOAbstractProblemsTest extends Specification {
             }
         }
         hasco.init()
-        def runner = hasco.runner
-        def openList = hasco.openList
+        def runner = hasco.simpleHASCOInstance
+        def openList = hasco.stdCandidateContainer
 
         then:
-        ! hasco.getBestSeenCandidate().isPresent()
+        ! hasco.bestCandidateCache.getBestSeenCandidate().isPresent()
         openList.queue.size()  == 2
 
         when:
@@ -178,7 +178,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
                 highestQueueSize = queueSize
             steps++;
             if(!solutionFound) {
-                def score = hasco.bestSeenScore
+                def score = hasco.bestCandidateCache.bestSeenScore
                 if(score.isPresent()) {
                     if(score.get() == 1.0) {
                         bestSolutionFoundAt = steps;
@@ -197,11 +197,11 @@ class StdHASCOAbstractProblemsTest extends Specification {
                 "the first ${((double)bestSolutionFoundAt)/steps} %  of all steps.\n" +
                 "The solution was found with ${bestSolutionStepEvalCount} evaluation, at a cache size of ${bestSolutionStepCacheSize}")
 
-        def s = hasco.bestSeenCandidate.get();
+        def s = hasco.bestCandidateCache.bestSeenCandidate.get();
         then:
         openList.queue.isEmpty()
         // A (a1=true, a2=v3, a3>=9.0, a4<=1.0, 5<=a5<=6)
-        hasco.bestSeenScore.get() == 1.0
+        hasco.bestCandidateCache.bestSeenScore.get() == 1.0
         s.component.name == 'A'
         s.parameterValues['a1'] == 'true'
         s.parameterValues['a2'] == 'v3'
@@ -221,7 +221,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         def illegalEvals = [];
 
         when:
-        StdHASCO hasco = new StdHASCO()
+        SimpleHASCOStdBuilder hasco = new SimpleHASCOStdBuilder()
         hasco.seed = seed
         hasco.requiredInterface = requiredInterface
         hasco.registry = compsRegistry
@@ -251,8 +251,8 @@ class StdHASCOAbstractProblemsTest extends Specification {
             return Optional.of(score)
         }
         hasco.init()
-        def runner = hasco.runner
-        def openList = hasco.openList
+        def runner = hasco.simpleHASCOInstance
+        def openList = hasco.stdCandidateContainer
 
         def invalidComponent
         while(runner.step()) {
@@ -270,11 +270,11 @@ class StdHASCOAbstractProblemsTest extends Specification {
                 break;
             }
         }
-        def bestCandidate = hasco.bestSeenCandidate.get()
+        def bestCandidate = hasco.bestCandidateCache.bestSeenCandidate.get()
 
         then:
         invalidComponent == null
-        hasco.bestSeenScore.get() == 1.5
+        hasco.bestCandidateCache.bestSeenScore.get() == 1.5
         bestCandidate.component.name == 'B'
         bestCandidate.parameterValues['c'] == 'true'
         bestCandidate.parameterValues['d'] in ["red", "green", "blue", "white", "black"]
@@ -290,7 +290,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         def illegalEvals = [];
 
         when:
-        StdHASCO hasco = new StdHASCO()
+        SimpleHASCOStdBuilder hasco = new SimpleHASCOStdBuilder()
         hasco.seed = seed
         hasco.requiredInterface = requiredInterface
         hasco.registry = compsRegistry
@@ -318,22 +318,22 @@ class StdHASCOAbstractProblemsTest extends Specification {
             return Optional.of(score)
         }
         hasco.init()
-        def runner = hasco.runner
-        def openList = hasco.openList
+        def runner = hasco.simpleHASCOInstance
+        def openList = hasco.stdCandidateContainer
 
         def invalidComponent
-        runner.runSequentially()
-        def bestCandidate = hasco.bestSeenCandidate.get()
+        runner.runAll()
+        def bestCandidate = hasco.bestCandidateCache.bestSeenCandidate.get()
 
         then:
         invalidComponent == null
-        hasco.bestSeenScore.get() == 1.5
+        illegalEvals.isEmpty()
+        hasco.bestCandidateCache.bestSeenScore.get() == 1.5
         bestCandidate.component.name == 'A'
         bestCandidate.parameterValues['a1'] == 'true'
         Double.parseDouble(bestCandidate.parameterValues['a3']) - 3 <= 2.0
         Double.parseDouble(bestCandidate.parameterValues['a4']) <= 5.0
 
-        illegalEvals.isEmpty()
     }
 
     def "test tiny recursive problem"() {
@@ -344,7 +344,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         def seed = 1L
 
         when:
-        StdHASCO hasco = new StdHASCO()
+        SimpleHASCOStdBuilder hasco = new SimpleHASCOStdBuilder()
         hasco.seed = seed
         hasco.requiredInterface = requiredInterface
         hasco.registry = compsRegistry
@@ -374,14 +374,14 @@ class StdHASCOAbstractProblemsTest extends Specification {
             return Optional.of(score)
         }
         hasco.init()
-        def runner = hasco.runner
-        def openList = hasco.openList
+        def runner = hasco.simpleHASCOInstance
+        def openList = hasco.stdCandidateContainer
 
         def invalidComponent
         while(runner.step()) {
         }
-        def bc = hasco.bestSeenCandidate.get()
-        def bs = hasco.bestSeenScore.get()
+        def bc = hasco.bestCandidateCache.bestSeenCandidate.get()
+        def bs = hasco.bestCandidateCache.bestSeenScore.get()
         then:
         bs <= 3.0
         bc.satisfactionOfRequiredInterfaces['ri'].parameterValues['b'] == 'false'
