@@ -7,6 +7,8 @@ import ai.libs.hasco.simplified.RefinementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 
@@ -21,7 +23,7 @@ import java.util.*;
  *      If all required interfaces are set it will instead create a phase 2 component instance.
  *
  */
-@org.springframework.stereotype.Component
+@Component
 public class StdRefiner implements ComponentRefiner {
 
     private final static Logger logger = LoggerFactory.getLogger(StdRefiner.class);
@@ -33,7 +35,7 @@ public class StdRefiner implements ComponentRefiner {
     }
 
     @Autowired
-    public StdRefiner(RefinementService refService) {
+    public StdRefiner(@Qualifier("stdRefinementService") RefinementService refService) {
         this.refService = refService;
     }
 

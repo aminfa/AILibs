@@ -5,6 +5,7 @@ import ai.libs.hasco.simplified.ClosedList;
 import ai.libs.hasco.simplified.OpenList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Primary;
 
 import java.util.*;
 import java.util.function.BiConsumer;

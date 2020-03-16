@@ -6,11 +6,14 @@ import ai.libs.hasco.simplified.schedulers.EvalQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+@Component
 public class SimpleHASCO {
 
     private final static Logger logger = LoggerFactory.getLogger(SimpleHASCO.class);
@@ -27,15 +30,21 @@ public class SimpleHASCO {
 
     private ComponentRefiner refiner;
 
+    @Value("${hasco.simplified.minEvalQueueSize:8}")
     private int minEvalQueueSize = 8;
 
-    private long refinementEvalMaxTime = 8000L,
-                     sampleEvalMaxTime = 2000L;
+    @Value("${hasco.simplified.refinementTime:8000}")
+    private long refinementEvalMaxTime = 8000L;
+
+    @Value("${hasco.simplified.sampleTime:2000}")
+    private long sampleEvalMaxTime = 2000L;
 
 
-    public SimpleHASCO(OpenList openList, ClosedList closedList,
+    public SimpleHASCO(@Qualifier("openList") OpenList openList,
+                       @Qualifier("closedList") ClosedList closedList,
                        ComponentEvaluator evaluator, EvalExecScheduler scheduler,
-                       ComponentInstanceSampler sampler, ComponentRefiner refiner) {
+                       @Qualifier("componentInstanceSampler") ComponentInstanceSampler sampler,
+                       @Qualifier("componentRefiner") ComponentRefiner refiner) {
         this.openList = openList;
         this.closedList = closedList;
         this.evaluator = evaluator;

@@ -5,7 +5,8 @@ import ai.libs.hasco.simplified.ComponentRegistry;
 import ai.libs.hasco.simplified.RefinementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -22,11 +23,15 @@ public class StdRefinementService implements RefinementService {
     static  {
         DECIMAL_FORMATTER = (DecimalFormat) NumberFormat.getNumberInstance(Locale.US);
     }
-    // new DecimalFormat("###.####");
 
-    private final static int NUM_SPLITS = 2;
-    private final static int MIN_RANGE_SIZE = 2;
 
+    @Value("${simplified.std.numSplitsFallback:2}")
+    private int numSplitsFallback = 2;
+
+    @Value("${simplified.std.minRangeSizeFallback:2}")
+    private int minRangeSizeFallback = 2;
+
+    @Autowired
     public StdRefinementService(ComponentRegistry registry) {
         this.registry = registry;
     }
@@ -95,8 +100,8 @@ public class StdRefinementService implements RefinementService {
             splitCount = paramRefConfigOpt.get().getRefinementsPerStep();
         } else {
             // TODO defaults are hardcoded:
-            minSplitSize = MIN_RANGE_SIZE;
-            splitCount = NUM_SPLITS;
+            minSplitSize = minRangeSizeFallback;
+            splitCount = numSplitsFallback;
         }
         numericSplit.configureSplits(splitCount, minSplitSize);
         numericSplit.createSplits();

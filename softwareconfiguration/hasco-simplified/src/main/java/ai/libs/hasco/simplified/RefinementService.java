@@ -4,9 +4,11 @@ import ai.libs.hasco.model.CategoricalParameterDomain;
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.model.NumericParameterDomain;
 import ai.libs.hasco.model.ParameterRefinementConfiguration;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public interface RefinementService {
 
     boolean refineCategoricalParameter(List<ComponentInstance> refinements,

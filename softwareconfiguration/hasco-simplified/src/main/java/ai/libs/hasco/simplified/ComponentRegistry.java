@@ -1,5 +1,6 @@
 package ai.libs.hasco.simplified;
 
+import ai.libs.hasco.core.SoftwareConfigurationProblem;
 import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.Parameter;
 import ai.libs.hasco.model.ParameterRefinementConfiguration;
@@ -10,8 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
+@org.springframework.stereotype.Component
 public class ComponentRegistry {
-
 
     private static ComponentRegistry EMPTY_REGISTRY = new ComponentRegistry(Collections.emptyList());
 
@@ -28,11 +29,17 @@ public class ComponentRegistry {
         this.paramConfigs = new HashMap<>();
     }
 
+    public ComponentRegistry(List<Component> componentList, Map<Component, Map<Parameter, ParameterRefinementConfiguration>> paramConfigs) {
+        this.componentList = componentList;
+        this.paramConfigs = paramConfigs;
+    }
+
     public static ComponentRegistry fromComponentLoader(ComponentLoader loader) {
         ComponentRegistry registry = new ComponentRegistry(new ArrayList<>(loader.getComponents()));
         registry.paramConfigs.putAll(loader.getParamConfigs());
         return registry;
     }
+
 
     public static ComponentRegistry emptyRegistry() {
         return EMPTY_REGISTRY;
@@ -53,4 +60,11 @@ public class ComponentRegistry {
                 .collect(Collectors.toList());
     }
 
+    public Map<Component, Map<Parameter, ParameterRefinementConfiguration>> getParamConfigs() {
+        return paramConfigs;
+    }
+
+    public List<Component> getComponentList() {
+        return componentList;
+    }
 }

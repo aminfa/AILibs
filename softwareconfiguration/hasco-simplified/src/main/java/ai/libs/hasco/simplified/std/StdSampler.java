@@ -5,10 +5,13 @@ import ai.libs.hasco.simplified.ComponentInstanceSampler;
 import ai.libs.hasco.simplified.ComponentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.*;
 import java.util.function.Supplier;
 
+@org.springframework.stereotype.Component
 public class StdSampler implements ComponentInstanceSampler {
 
     private final static Logger logger = LoggerFactory.getLogger(StdSampler.class);
@@ -17,8 +20,10 @@ public class StdSampler implements ComponentInstanceSampler {
 
     private final Supplier<Double> ng;
 
-    private int samplesPerDraw = 4;
+    @Value("${hasco.simplified.std.samplesPerRefinement:4}")
+    private int samplesPerRefinement;
 
+    @Value("${hasco.simplified.std.drawNumericSplitMeans:false}")
     private boolean drawNumericSplitMeans = false;
 
     public StdSampler(ComponentRegistry registry, Supplier<Double> ng) {
@@ -26,7 +31,8 @@ public class StdSampler implements ComponentInstanceSampler {
         this.registry = registry;
     }
 
-    public StdSampler(ComponentRegistry registry, Long seed) {
+    @Autowired
+    public StdSampler(ComponentRegistry registry, @Value("${simplified.std.seed:0}") Long seed) {
         this(registry, new Random(seed)::nextDouble);
     }
 
@@ -43,7 +49,7 @@ public class StdSampler implements ComponentInstanceSampler {
             logger.debug("Refinement {} already has {} many samples.", source, alreadySampleSize);
         }
         List<ComponentInstance> cis = new ArrayList<>();
-        for (int i = 0; i < samplesPerDraw - alreadySampleSize; i++) {
+        for (int i = 0; i < samplesPerRefinement - alreadySampleSize; i++) {
             logger.debug("Drawing a new sample for {} and grounding required interfaces and parameters.", source);
             ComponentInstance target = copyParams(source);
             // set all required interfaces, using an index guard
@@ -192,11 +198,4 @@ public class StdSampler implements ComponentInstanceSampler {
         return ci;
     }
 
-    public void setSamplesPerDraw(int samplesPerDraw) {
-        this.samplesPerDraw = samplesPerDraw;
-    }
-
-    public void setDrawNumericSplitMeans(boolean drawNumericSplitMeans) {
-        this.drawNumericSplitMeans = drawNumericSplitMeans;
-    }
 }

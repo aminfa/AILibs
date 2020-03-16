@@ -1,19 +1,20 @@
 package ai.libs.hasco.simplified.std;
 
+import ai.libs.hasco.core.HASCOSolutionCandidate;
+import ai.libs.hasco.core.RefinementConfiguredSoftwareConfigurationProblem;
 import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.serialization.ComponentLoader;
 import ai.libs.hasco.simplified.*;
-import ai.libs.hasco.simplified.schedulers.ParallelRefParallelSampleScheduler;
+import org.api4.java.algorithm.IAlgorithmFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.MutablePropertySources;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
@@ -26,47 +27,28 @@ import java.util.function.BiConsumer;
  *  - Then call `init` to initialize a SimpleHASCO instance, which then can be accessed through a getter. <br>
  *
  */
-public class SimpleHASCOStdBuilder {
+public class SimpleHASCOStdBuilder implements
+        IAlgorithmFactory<RefinementConfiguredSoftwareConfigurationProblem<Double>, HASCOSolutionCandidate<Double>, SimpleHASCOAlgorithmView> {
 
     private final static Logger logger = LoggerFactory.getLogger(SimpleHASCOStdBuilder.class);
 
-//    private final ApplicationContext ctx = new AnnotationConfigApplicationContext(SimpleHASCOStdConf.class);
+    private AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
 
-    private ComponentRegistry registry = null;
-
-    private Long seed = null;
-
-    private StdCandidateContainer candidateContainer = null;
-
-    private BestCandidateCache bestCandidateCache = null;
-
-    private StdRefiner refiner = null;
-
-    private StdSampler sampler = null;
-
-    protected ComponentEvaluator evaluator;
-
-    protected String requiredInterface;
-
-    private long refinementTime = 8000, sampleTime = 2000;
-
-    private boolean flagRandomNumericSampling = true;
-
-    private int threadCount = 8;
-
-    private int minEvalQueueSize = 4,
-                samplesPerRefinement = 4;
+    private final Map<String, Object> builderProperties = new HashMap<>();
 
     private BiConsumer<ComponentInstance, Double> sampleConsumer = (componentInstance, aDouble) -> {};
 
-    private SimpleHASCO simpleHASCO;
+    boolean initFlag = false;
 
     public SimpleHASCOStdBuilder() {
+    }
 
+    public SimpleHASCOStdBuilder(AnnotationConfigApplicationContext ctx) {
+        this.ctx = ctx;
     }
 
     private boolean initialized() {
-        return simpleHASCO != null;
+        return initFlag;
     }
 
     private void assertInitialized() {
@@ -81,76 +63,14 @@ public class SimpleHASCOStdBuilder {
         }
     }
 
-    public StdRefiner getRefiner() {
-        if(refiner == null) {
-            refiner = new StdRefiner(getRegistry());
-        }
-        return refiner;
-    }
-
-    public StdSampler getSampler() {
-        if(sampler == null)
-            sampler = new StdSampler(getRegistry(), getSeed());
-        return sampler;
-    }
-
-    public String getRequiredInterface() {
-        if(requiredInterface == null) {
-            throw new IllegalStateException();
-        }
-        return requiredInterface;
-    }
-
-    public ComponentEvaluator getEvaluator() {
-        if(evaluator == null) {
-            logger.warn("Evaluator wasn't initialized. Using a constant evaluator: `component_instance -> 1.0`");
-            evaluator = c -> Optional.of(1.0);
-        }
-        return evaluator;
-    }
-
-    public ComponentRegistry getRegistry() {
-        if(registry == null) {
-            registry = ComponentRegistry.emptyRegistry();
-            logger.warn("Component registry was not set. Using an empty component registry.");
-        }
-        return registry;
-    }
-
-    public Long getSeed() {
-        if(seed == null) {
-            seed = new Random().nextLong();
-            logger.warn("Seed was not set. Using a random seed: {}", seed);
-        }
-        return seed;
-    }
-
-    public StdCandidateContainer getStdCandidateContainer() {
-        if(candidateContainer == null) {
-            candidateContainer = new StdCandidateContainer();
-        }
-        return candidateContainer;
-    }
-
-    public BestCandidateCache getBestCandidateCache() {
-        if(bestCandidateCache == null) {
-            bestCandidateCache = new BestCandidateCache(getStdCandidateContainer());
-        }
-        return bestCandidateCache;
-    }
-
     public void setSeed(Long seed) {
         assertUninitialized();
-        if(sampler != null)
-            throw new IllegalStateException();
-        this.seed = seed;
+        this.builderProperties.put("hasco.simplified.seed", seed.toString());
     }
 
     public void setRegistry(ComponentRegistry registry) {
         assertUninitialized();
-        if(sampler != null || refiner != null)
-            throw new IllegalStateException();
-        this.registry = registry;
+        ctx.getBeanFactory().registerSingleton("registry", registry);
     }
 
     public void setComponentLoader(ComponentLoader componentLoader) {
@@ -158,116 +78,160 @@ public class SimpleHASCOStdBuilder {
         setRegistry(registry);
     }
 
-    public void setCandidateContainer(StdCandidateContainer candidateContainer) {
-        assertUninitialized();
-        this.candidateContainer = candidateContainer;
-    }
-
-    public void setRefiner(StdRefiner refiner) {
-        assertUninitialized();
-        this.refiner = refiner;
-    }
-
-    public void setSampler(StdSampler sampler) {
-        assertUninitialized();
-        this.sampler = sampler;
-    }
-
     public void setSampleConsumer(BiConsumer<ComponentInstance, Double> sampleConsumer) {
         Objects.requireNonNull(sampleConsumer);
-        this.sampleConsumer = sampleConsumer;
+        assertUninitialized();
+        ctx.getBeanFactory().registerSingleton("sampleConsumer", sampleConsumer);
     }
 
     public void setRequiredInterface(String requiredInterface) {
         assertUninitialized();
-        this.requiredInterface = requiredInterface;
+        this.builderProperties.put("hasco.simplified.rootRequiredInterface", requiredInterface);
     }
 
     public void setEvaluator(ComponentEvaluator evaluator) {
         assertUninitialized();
-        this.evaluator = evaluator;
+        ctx.getBeanFactory().registerSingleton("evaluator", evaluator);
+    }
+
+    public void setSerialScheduling() {
+        this.setScheduling("serial");
+    }
+
+    public void setParallelScheduling() {
+        this.setScheduling("parallel");
+    }
+
+    public void setAsyncSerialScheduling() {
+        this.setScheduling("async-serial");
+    }
+
+    public void setAsyncParallelScheduling() {
+        this.setScheduling("async-parallel");
+    }
+
+    public void setScheduling(String scheduling) {
+        assertInitialized();
+        Objects.requireNonNull(scheduling);
+        this.builderProperties.put("hasco.simplified.scheduling", scheduling);
     }
 
     public void setRefinementTime(long duration, TimeUnit timeUnit) {
-        this.refinementTime = timeUnit.toMillis(duration);
-        if(sampleTime < 1) {
-            throw new IllegalArgumentException("The max refinement time needs to be positive: " + sampleTime);
+        long refinementTime = timeUnit.toMillis(duration);
+        if(refinementTime < 1) {
+            throw new IllegalArgumentException("The max refinement time needs to be positive: " + refinementTime);
         }
+        builderProperties.put("hasco.simplified.refinementTime", Long.toString(refinementTime));
     }
 
     public void setSampleTime(long duration, TimeUnit timeUnit) {
-        this.sampleTime = timeUnit.toMillis(duration);
+        long sampleTime = timeUnit.toMillis(duration);
         if(sampleTime < 1) {
             throw new IllegalArgumentException("The max sample time needs to be positive: " + sampleTime);
         }
+        builderProperties.put("hasco.simplified.sampleTime", Long.toString(sampleTime));
     }
 
     public void setFlagRandomNumericSampling(boolean flagRandomNumericSampling) {
-        this.flagRandomNumericSampling = flagRandomNumericSampling;
+        builderProperties.put("hasco.simplified.std.randomNumericSplit", String.valueOf(flagRandomNumericSampling));
+        builderProperties.put("hasco.simplified.std.drawNumericSplitMeans", String.valueOf(!flagRandomNumericSampling));
     }
 
     public void setThreadCount(int threadCount) {
         if(threadCount < 1) {
             throw new IllegalArgumentException("The thread count needs to be positive: " + threadCount);
         }
-        this.threadCount = threadCount;
+        builderProperties.put("hasco.simplified.threadCount", String.valueOf(threadCount));
     }
 
     public void setMinEvalQueueSize(int minEvalQueueSize) {
         if(minEvalQueueSize < 1) {
             throw new IllegalArgumentException("The queue size needs to be positive: " + minEvalQueueSize);
         }
-        this.minEvalQueueSize = minEvalQueueSize;
+        builderProperties.put("hasco.simplified.minEvalQueueSize", String.valueOf(minEvalQueueSize));
     }
 
     public void setSamplesPerRefinement(int samplesPerRefinement) {
         if(samplesPerRefinement < 1) {
             throw new IllegalArgumentException("Samples need to be positive: " + samplesPerRefinement);
         }
-        this.samplesPerRefinement = samplesPerRefinement;
+        builderProperties.put("hasco.simplified.std.samplesPerRefinement", String.valueOf(samplesPerRefinement));
+    }
+
+    public void initializeBuilderProperties() {
+        ConfigurableEnvironment environment = ctx.getEnvironment();
+
+        MutablePropertySources propertySources = environment.getPropertySources();
+        propertySources.addFirst(new MapPropertySource("BUILDER_PROPERTIES_" + this.toString(), builderProperties));
+    }
+
+    public void initializeCtx() {
+        assertUninitialized();
+        initializeBuilderProperties();
+        ctx.register(SimpleHASCOStdConf.class);
+        ctx.refresh();
     }
 
     public void init() {
         assertUninitialized();
+        initializeCtx();
+
+        ComponentRegistry registry = ctx.getBean(ComponentRegistry.class);
+        String requiredInterface = ctx.getEnvironment().getProperty("hasco.simplified.rootRequiredInterface");
+        Objects.requireNonNull(requiredInterface, "No required interface defined.");
+
         // Get all the components that are offering the required interface
-        List<Component> providers = getRegistry().getProvidersOf(getRequiredInterface());
+        List<Component> providers = registry.getProvidersOf(requiredInterface);
         if(providers.isEmpty()) {
-            logger.warn("Not a single component provides the requested interface: {}", getRequiredInterface());
+            logger.warn("Not a single component provides the requested interface: {}", requiredInterface);
         }
+
+        StdCandidateContainer candidates = ctx.getBean(StdCandidateContainer.class);
 
         // insert the components that provide the required interface as roots
         providers.stream()
                 .map(CIPhase1::createRoot)
-                .forEach(getStdCandidateContainer()::insertRoot);
+                .forEach(candidates::insertRoot);
 
-        getSampler().setSamplesPerDraw(samplesPerRefinement);
-        getSampler().setDrawNumericSplitMeans(!flagRandomNumericSampling);
+        initFlag = true;
 
-        // Create the single runner.
-        simpleHASCO = new SimpleHASCO(getStdCandidateContainer(),
-                getBestCandidateCache(),
-                getEvaluator(),
-                new ParallelRefParallelSampleScheduler(threadCount),
-//                new SerialRefSerialSampleScheduler(),
-                getSampler(),
-                getRefiner());
-
-        simpleHASCO.setMinEvalQueueSize(minEvalQueueSize);
-        simpleHASCO.setRefinementEvalMaxTime(refinementTime);
-        simpleHASCO.setSampleEvalMaxTime(sampleTime);
-
-        getStdCandidateContainer().setSampleConsumer(this.sampleConsumer);
-
-        logger.info("Initialized a Simple HASCO instance for the requested interface: {}", getRequiredInterface());
+        logger.info("Initialized a Simple HASCO instance for the requested interface: {}", requiredInterface);
         assertInitialized();
+    }
+
+    @Override
+    public SimpleHASCOAlgorithmView getAlgorithm() {
+        return ctx.getBean(SimpleHASCOAlgorithmView.class);
+    }
+
+    @Override
+    public SimpleHASCOAlgorithmView getAlgorithm(final RefinementConfiguredSoftwareConfigurationProblem<Double> problem) {
+        assertUninitialized();
+        ComponentRegistry registry = new ComponentRegistry(new ArrayList<>(problem.getComponents()),
+                problem.getParamRefinementConfig());
+        setRegistry(registry);
+        setRequiredInterface(problem.getRequiredInterface());
+        ComponentEvaluator evaluator = ComponentEvaluator.fromIObjectEvaluator(problem.getCompositionEvaluator());
+        setEvaluator(evaluator);
+        return getAlgorithm();
     }
 
     public SimpleHASCO getSimpleHASCOInstance() {
         if(!initialized()) {
             init();
         }
-        return simpleHASCO;
+        return ctx.getBean(SimpleHASCO.class);
     }
 
+    public StdCandidateContainer getStdCandidateContainer() {
+        assertInitialized();
+        return ctx.getBean(StdCandidateContainer.class);
+    }
+
+
+    public BestCandidateCache getBestCandidateCache() {
+        assertInitialized();
+        return ctx.getBean(BestCandidateCache.class);
+    }
 
 }

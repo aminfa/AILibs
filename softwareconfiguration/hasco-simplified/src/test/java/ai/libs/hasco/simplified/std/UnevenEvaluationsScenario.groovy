@@ -15,7 +15,7 @@ class UnevenEvaluationsScenario extends Specification {
         def cl = new ComponentLoader(new File('testrsc/difficultproblem.json'))
         def builder = new SimpleHASCOStdBuilder()
         builder.seed = 1L
-        builder.minEvalQueueSize = 8
+        builder.minEvalQueueSize = 5
         builder.samplesPerRefinement = 2
         builder.threadCount = 8
         builder.setSampleTime(4, TimeUnit.SECONDS)

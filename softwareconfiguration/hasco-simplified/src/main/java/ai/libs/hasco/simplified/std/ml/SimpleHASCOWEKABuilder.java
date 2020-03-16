@@ -48,10 +48,8 @@ public class SimpleHASCOWEKABuilder extends SimpleHASCOStdBuilder {
 
     @Override
     public void init() {
-        if(evaluator == null)
-            initializeEvaluator();
-        if(requiredInterface == null)
-            setRequiredInterface("AbstractClassifier");
+        initializeEvaluator();
+        setRequiredInterface("AbstractClassifier");
         super.init();
     }
 
