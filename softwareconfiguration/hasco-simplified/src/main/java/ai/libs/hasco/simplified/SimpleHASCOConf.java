@@ -2,6 +2,7 @@ package ai.libs.hasco.simplified;
 
 import ai.libs.hasco.simplified.schedulers.EvalExecScheduler;
 import ai.libs.hasco.simplified.std.BestCandidateCache;
+import com.google.common.eventbus.EventBus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
@@ -23,6 +24,11 @@ public class SimpleHASCOConf {
         return (ComponentRegistry) context.getBean("registry");
     }
 
+    @Bean
+    @Primary
+    public EventBus eventBus(ApplicationContext context) {
+        return (EventBus) context.getBean("bus");
+    }
 
 
 }

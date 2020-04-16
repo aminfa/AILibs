@@ -6,6 +6,7 @@ import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.serialization.ComponentLoader;
 import ai.libs.hasco.simplified.*;
+import com.google.common.eventbus.EventBus;
 import org.api4.java.algorithm.IAlgorithmFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,8 @@ public class SimpleHASCOStdBuilder implements
     private final Map<String, Object> builderProperties = new HashMap<>();
 
     private BiConsumer<ComponentInstance, Double> sampleConsumer = (componentInstance, aDouble) -> {};
+
+    private EventBus eventBus;
 
     boolean initFlag = false;
 
@@ -89,9 +92,31 @@ public class SimpleHASCOStdBuilder implements
         this.builderProperties.put("hasco.simplified.rootRequiredInterface", requiredInterface);
     }
 
+    public void setPublishNodeEvent(boolean publishNodes) {
+        assertUninitialized();
+        this.builderProperties.put("hasco.simplified.publishNodes", String.valueOf(publishNodes));
+    }
+
     public void setEvaluator(ComponentEvaluator evaluator) {
         assertUninitialized();
         ctx.getBeanFactory().registerSingleton("evaluator", evaluator);
+    }
+
+    public void setEventBus(EventBus eventBus) {
+        assertUninitialized();
+        Objects.requireNonNull(eventBus, "EventBus cannot be null.");
+        if(this.eventBus != null) {
+            throw new IllegalStateException("Eventbus has already been set. Make sure setEventBus is called before it is queried.");
+        }
+        this.eventBus = eventBus;
+        ctx.getBeanFactory().registerSingleton("bus", eventBus);
+    }
+
+    public EventBus getEventBus() {
+        if(this.eventBus == null) {
+            setEventBus(new EventBus());
+        }
+        return eventBus;
     }
 
     public void setSerialScheduling() {
@@ -168,6 +193,10 @@ public class SimpleHASCOStdBuilder implements
     public void initializeCtx() {
         assertUninitialized();
         initializeBuilderProperties();
+//       make sure event bus is set:
+        if(getEventBus() == null) {
+            throw new IllegalStateException("Event bus wasn't set.");
+        }
         ctx.register(SimpleHASCOStdConf.class);
         ctx.refresh();
     }
@@ -188,6 +217,8 @@ public class SimpleHASCOStdBuilder implements
 
         StdCandidateContainer candidates = ctx.getBean(StdCandidateContainer.class);
 
+        candidates.setRequired(requiredInterface);
+
         // insert the components that provide the required interface as roots
         providers.stream()
                 .map(CIPhase1::createRoot)
@@ -201,6 +232,8 @@ public class SimpleHASCOStdBuilder implements
 
     @Override
     public SimpleHASCOAlgorithmView getAlgorithm() {
+        if(!initialized())
+            init();
         return ctx.getBean(SimpleHASCOAlgorithmView.class);
     }
 

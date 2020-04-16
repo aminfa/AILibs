@@ -122,8 +122,6 @@ public class StdRefinementService implements RefinementService {
         return true;
     }
 
-
-
     @Override
     public boolean refineRequiredInterface(List<ComponentInstance> refinements,
                                            ComponentInstance base,
@@ -147,7 +145,6 @@ public class StdRefinementService implements RefinementService {
              */
             CIPhase1 newBase = new CIPhase1((CIPhase1) base);
             Integer index = newBase.allocateNextIndex();
-
             String[] parentPath = ((CIIndexed) component).getPath();
             ComponentInstance parent = newBase.getComponentByPath(parentPath);
 

@@ -6,6 +6,10 @@ import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.simplified.SimpleHASCO;
 import ai.libs.jaicore.basic.IOwnerBasedAlgorithmConfig;
 import ai.libs.jaicore.basic.algorithm.AAlgorithm;
+import ai.libs.jaicore.basic.algorithm.AlgorithmInitializedEvent;
+import ai.libs.jaicore.basic.algorithm.EAlgorithmState;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import org.api4.java.algorithm.events.IAlgorithmEvent;
 import org.api4.java.algorithm.exceptions.AlgorithmException;
 import org.api4.java.algorithm.exceptions.AlgorithmExecutionCanceledException;
@@ -22,11 +26,20 @@ public class SimpleHASCOAlgorithmView extends AAlgorithm<RefinementConfiguredSof
 
     private BestCandidateCache candidateCache;
 
+    private final EventBus eventBus;
+
     @Autowired
-    public SimpleHASCOAlgorithmView(Optional<IOwnerBasedAlgorithmConfig> config, RefinementConfiguredSoftwareConfigurationProblem<Double> input, SimpleHASCO simpleHASCO, BestCandidateCache cache) {
+    public SimpleHASCOAlgorithmView(Optional<IOwnerBasedAlgorithmConfig> config, RefinementConfiguredSoftwareConfigurationProblem<Double> input, SimpleHASCO simpleHASCO, BestCandidateCache cache, EventBus eventBus) {
         super(config.orElse(null), input);
         this.simpleHASCO = simpleHASCO;
         this.candidateCache = cache;
+        this.eventBus = eventBus;
+        super.registerListener(new Object() {
+            @Subscribe
+            public void rebroadcast(Object anyEvent) {
+                eventBus.post(anyEvent);
+            }
+        });
     }
 
     @Override
@@ -46,4 +59,16 @@ public class SimpleHASCOAlgorithmView extends AAlgorithm<RefinementConfiguredSof
 //        return new HASCOSolutionCandidate<>(bestSeenCandidate.get(), );
         return null;
     }
+
+    @Override
+    public void registerListener(final Object listener) {
+        this.eventBus.register(listener);
+    }
+
+
+    @Override
+    public String toString() {
+        return "SimpleHASCO{std}";
+    }
+
 }

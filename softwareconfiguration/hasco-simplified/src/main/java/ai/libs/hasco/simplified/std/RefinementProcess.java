@@ -4,6 +4,7 @@ import ai.libs.hasco.model.*;
 import ai.libs.hasco.simplified.RefinementService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,9 @@ public class RefinementProcess {
     private String displayName;
 
     private ComponentInstance nextComponentToBeRefined = null;
+
+    @Value("${hasco.simplified.publishNodes:false}")
+    private boolean publishNodes = false;
 
     public RefinementProcess(ComponentInstance base) {
         this.base = base;
@@ -190,6 +194,9 @@ public class RefinementProcess {
     }
 
     public List<ComponentInstance> getRefinements() {
+        if(publishNodes) {
+            refinements.forEach(ci -> ((CIRoot) ci).setParentNode((CIRoot) base));
+        }
         return refinements;
     }
 }

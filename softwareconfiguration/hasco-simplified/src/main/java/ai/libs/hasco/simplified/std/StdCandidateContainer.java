@@ -3,9 +3,11 @@ package ai.libs.hasco.simplified.std;
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.simplified.ClosedList;
 import ai.libs.hasco.simplified.OpenList;
+import ai.libs.jaicore.graphvisualizer.events.graph.GraphInitializedEvent;
+import ai.libs.jaicore.graphvisualizer.events.graph.NodeAddedEvent;
+import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Primary;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -17,13 +19,21 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
 
     private final static Logger logger = getLogger(StdCandidateContainer.class);
 
+    private String requiredInterface;
+
     private final PriorityQueue<CIRoot> queue;
 
     private final List<CIRoot> firstRoots = new ArrayList<>();
 
     private BiConsumer<ComponentInstance, Double> sampleConsumer = (componentInstance, aDouble) -> {};
 
-    public StdCandidateContainer() {
+    private EventBus eventBus;
+
+    @Value("${hasco.simplified.publishNodes:false}")
+    private boolean publishNodes = false;
+
+    public StdCandidateContainer(EventBus eventBus) {
+        this.eventBus = eventBus;
         this.queue = new PriorityQueue<>(this);
     }
 
@@ -57,18 +67,27 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
             root.setEvalReport(report);
         }
         queue.add(root);
-
         for (int i = 0; i < witnesses.size(); i++) {
             if(results.get(i).isPresent()) {
                 sampleConsumer.accept(witnesses.get(i),
                         results.get(i).get());
             }
         }
+
+        if(publishNodes) {
+            NodeAddedEvent<Object> nodeAddedEvent = new NodeAddedEvent<>(null, root.getParentNode(), root, "rootComponent");
+            eventBus.post(nodeAddedEvent);
+        }
+
     }
 
     public void insertRoot(ComponentInstance root) {
         firstRoots.add(castToRoot(root));
         queue.add(castToRoot(root));
+        if(publishNodes) {
+            NodeAddedEvent<Object> nodeAddedEvent = new NodeAddedEvent<>(null, requiredInterface, root, "rootComponent");
+            eventBus.post(nodeAddedEvent);
+        }
     }
 
     @Override
@@ -101,6 +120,14 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
             return 1;
         } else {
             return o1.compareTo(o2);
+        }
+    }
+
+    public void setRequired(String requiredInterface) {
+        this.requiredInterface = requiredInterface;
+        if(publishNodes) {
+            GraphInitializedEvent<String> event = new GraphInitializedEvent<String>(null, requiredInterface);
+            eventBus.post(event);
         }
     }
 }

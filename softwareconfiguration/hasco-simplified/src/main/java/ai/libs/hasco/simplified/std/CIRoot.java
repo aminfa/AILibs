@@ -12,6 +12,7 @@ import java.util.*;
 
 public class CIRoot extends CIIndexed implements Comparable<CIRoot> {
 
+    private CIRoot parentNode = null;
 
     private final static Logger logger = LoggerFactory.getLogger(CIRoot.class);
 
@@ -46,6 +47,15 @@ public class CIRoot extends CIIndexed implements Comparable<CIRoot> {
         } else if(logger.isTraceEnabled()){
             logger.trace("Refinement {} couldn't reuse any previous evaluation.", displayText());
         }
+    }
+
+
+    public CIRoot getParentNode() {
+        return parentNode;
+    }
+
+    public void setParentNode(CIRoot parentNode) {
+        this.parentNode = parentNode;
     }
 
     private boolean isWitness(ComponentInstance witnessRoot) {
@@ -223,5 +233,4 @@ public class CIRoot extends CIIndexed implements Comparable<CIRoot> {
             }
         }
     }
-
 }

@@ -7,6 +7,7 @@ import ai.libs.hasco.simplified.*;
 import ai.libs.hasco.simplified.schedulers.EvalExecScheduler;
 import ai.libs.hasco.simplified.schedulers.ParallelRefParallelSampleScheduler;
 import ai.libs.hasco.simplified.schedulers.SerialRefSerialSampleScheduler;
+import com.google.common.eventbus.EventBus;
 import org.api4.java.common.attributedobjects.IObjectEvaluator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -25,8 +26,8 @@ public class SimpleHASCOStdConf extends SimpleHASCOConf{
 
     @Bean
     @Primary
-    StdCandidateContainer stdCandidateContainer() {
-        return new StdCandidateContainer();
+    StdCandidateContainer stdCandidateContainer(EventBus eventBus) {
+        return new StdCandidateContainer(eventBus);
     }
 
 
@@ -81,6 +82,5 @@ public class SimpleHASCOStdConf extends SimpleHASCOConf{
         RefinementConfiguredSoftwareConfigurationProblem<Double> input = new RefinementConfiguredSoftwareConfigurationProblem<>(coreProblem, registry.getParamConfigs());
         return input;
     }
-
 
 }

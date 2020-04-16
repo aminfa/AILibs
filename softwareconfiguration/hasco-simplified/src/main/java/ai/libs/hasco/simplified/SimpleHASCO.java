@@ -3,6 +3,7 @@ package ai.libs.hasco.simplified;
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.simplified.schedulers.EvalExecScheduler;
 import ai.libs.hasco.simplified.schedulers.EvalQueue;
+import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,8 @@ public class SimpleHASCO {
     @Value("${hasco.simplified.sampleTime:2000}")
     private long sampleEvalMaxTime = 2000L;
 
+    
+    private EventBus eventBus;
 
     public SimpleHASCO(@Qualifier("openList") OpenList openList,
                        @Qualifier("closedList") ClosedList closedList,
