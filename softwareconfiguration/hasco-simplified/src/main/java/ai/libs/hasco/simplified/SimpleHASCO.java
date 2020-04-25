@@ -3,18 +3,13 @@ package ai.libs.hasco.simplified;
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.simplified.schedulers.EvalExecScheduler;
 import ai.libs.hasco.simplified.schedulers.EvalQueue;
-import com.google.common.eventbus.EventBus;
+import org.aeonbits.owner.ConfigCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-@Component
 public class SimpleHASCO {
 
     private final static Logger logger = LoggerFactory.getLogger(SimpleHASCO.class);
@@ -31,29 +26,33 @@ public class SimpleHASCO {
 
     private ComponentRefiner refiner;
 
-    @Value("${hasco.simplified.minEvalQueueSize:8}")
-    private int minEvalQueueSize = 8;
+    private final int minEvalQueueSize;
 
-    @Value("${hasco.simplified.refinementTime:8000}")
-    private long refinementEvalMaxTime = 8000L;
+    private final long refinementEvalMaxTime;
 
-    @Value("${hasco.simplified.sampleTime:2000}")
-    private long sampleEvalMaxTime = 2000L;
+    private final long sampleEvalMaxTime;
 
-    
-    private EventBus eventBus;
 
-    public SimpleHASCO(@Qualifier("openList") OpenList openList,
-                       @Qualifier("closedList") ClosedList closedList,
+    {
+        SimpleHASCOConfig config = ConfigCache.getOrCreate(SimpleHASCOConfig.class);
+        this.minEvalQueueSize = config.getMinEvalQueueSize();
+        this.refinementEvalMaxTime = config.getRefinementTime();
+        this.sampleEvalMaxTime = config.getSampleTime();
+    }
+
+    public SimpleHASCO(OpenList openList,
+                       ClosedList closedList,
                        ComponentEvaluator evaluator, EvalExecScheduler scheduler,
-                       @Qualifier("componentInstanceSampler") ComponentInstanceSampler sampler,
-                       @Qualifier("componentRefiner") ComponentRefiner refiner) {
+                       ComponentInstanceSampler sampler,
+                       ComponentRefiner refiner) {
         this.openList = openList;
         this.closedList = closedList;
         this.evaluator = evaluator;
         this.scheduler = scheduler;
         this.sampler = sampler;
         this.refiner = refiner;
+        logger.debug("Initialized Simple HASCO with {} min eval queue, {} refinement time and {} sample time.",
+                minEvalQueueSize, refinementEvalMaxTime, sampleEvalMaxTime);
     }
 
     private void drawSamples(ComponentInstance refinement, EvalQueue queue) {
@@ -143,15 +142,4 @@ public class SimpleHASCO {
         return closedList;
     }
 
-    public void setMinEvalQueueSize(int minEvalQueueSize) {
-        this.minEvalQueueSize = minEvalQueueSize;
-    }
-
-    public void setRefinementEvalMaxTime(long refinementEvalMaxTime) {
-        this.refinementEvalMaxTime = refinementEvalMaxTime;
-    }
-
-    public void setSampleEvalMaxTime(long sampleEvalMaxTime) {
-        this.sampleEvalMaxTime = sampleEvalMaxTime;
-    }
 }

@@ -14,12 +14,9 @@ import org.api4.java.algorithm.events.IAlgorithmEvent;
 import org.api4.java.algorithm.exceptions.AlgorithmException;
 import org.api4.java.algorithm.exceptions.AlgorithmExecutionCanceledException;
 import org.api4.java.algorithm.exceptions.AlgorithmTimeoutedException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-@Component
 public class SimpleHASCOAlgorithmView extends AAlgorithm<RefinementConfiguredSoftwareConfigurationProblem<Double>, HASCOSolutionCandidate<Double>> {
 
     private SimpleHASCO simpleHASCO;
@@ -28,8 +25,10 @@ public class SimpleHASCOAlgorithmView extends AAlgorithm<RefinementConfiguredSof
 
     private final EventBus eventBus;
 
-    @Autowired
-    public SimpleHASCOAlgorithmView(Optional<IOwnerBasedAlgorithmConfig> config, RefinementConfiguredSoftwareConfigurationProblem<Double> input, SimpleHASCO simpleHASCO, BestCandidateCache cache, EventBus eventBus) {
+    public SimpleHASCOAlgorithmView(Optional<IOwnerBasedAlgorithmConfig> config,
+                                    RefinementConfiguredSoftwareConfigurationProblem<Double> input,
+                                    SimpleHASCO simpleHASCO, BestCandidateCache cache,
+                                    EventBus eventBus) {
         super(config.orElse(null), input);
         this.simpleHASCO = simpleHASCO;
         this.candidateCache = cache;

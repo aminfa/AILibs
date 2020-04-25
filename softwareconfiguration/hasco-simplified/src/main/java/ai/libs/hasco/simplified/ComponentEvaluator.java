@@ -5,14 +5,22 @@ import org.api4.java.common.attributedobjects.IObjectEvaluator;
 import org.api4.java.common.attributedobjects.ObjectEvaluationFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-@Component
 public interface ComponentEvaluator {
 
     Logger logger = LoggerFactory.getLogger(ComponentEvaluator.class);
+
+    /**
+     * Evaluates the component instance.
+     * If the evaluation fails or the sample is invalid returns an empty Optional.
+     *
+     * @param sample The sample to be evaluated.
+     * @return The evaluation result
+     * @throws InterruptedException The thread was interrupted while working on the evaluation.
+     */
+    Optional<Double> eval(ComponentInstance sample) throws InterruptedException;
 
     static ComponentEvaluator fromIObjectEvaluator(IObjectEvaluator<ComponentInstance, Double> compositionEvaluator) {
         return sample -> {
@@ -24,34 +32,6 @@ public interface ComponentEvaluator {
             }
         };
     }
-
-    /**
-     * Simple-HASCO calls this method exactly once before it uses the eval on the sample.
-     * The returned object is later on fed to the eval function.
-     * TODO
-     */
-    default Object prepareEvaluator(ComponentInstance sample) {
-        return null;
-    }
-
-    /**
-     * Simple-HASCO calls this method exactly once right after it has called the eval method.
-     *
-     * @param sample
-     */
-    default void cleanupEvaluator(ComponentInstance sample) {
-
-    }
-
-    /**
-     * Evaluates the component instance.
-     * If the evaluation fails or the sample is invalid returns an empty Optional.
-     *
-     * @param sample The sample to be evaluated.
-     * @return The evaluation result
-     * @throws InterruptedException The thread was interrupted while working on the evaluation.
-     */
-    Optional<Double> eval(ComponentInstance sample) throws InterruptedException;
 
     default IObjectEvaluator<ComponentInstance, Double> toIObjectEvaluator() {
         return new IObjectEvaluator<ComponentInstance, Double>() {

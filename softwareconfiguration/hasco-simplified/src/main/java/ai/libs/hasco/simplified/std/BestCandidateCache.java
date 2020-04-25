@@ -4,14 +4,10 @@ import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.simplified.ClosedList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
 
-@Component
 public class BestCandidateCache implements ClosedList {
 
     private final static Logger logger = LoggerFactory.getLogger(BestCandidateCache.class);
@@ -26,7 +22,6 @@ public class BestCandidateCache implements ClosedList {
 
     private ClosedList innerList;
 
-    @Autowired
     public BestCandidateCache(StdCandidateContainer stdCandidateContainer) {
         this.innerList = stdCandidateContainer;
     }

@@ -3,15 +3,14 @@ package ai.libs.hasco.simplified.std;
 import ai.libs.hasco.model.*;
 import ai.libs.hasco.simplified.ComponentInstanceSampler;
 import ai.libs.hasco.simplified.ComponentRegistry;
+import ai.libs.hasco.simplified.SimpleHASCOConfig;
+import org.aeonbits.owner.ConfigCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.*;
 import java.util.function.Supplier;
 
-@org.springframework.stereotype.Component
 public class StdSampler implements ComponentInstanceSampler {
 
     private final static Logger logger = LoggerFactory.getLogger(StdSampler.class);
@@ -20,19 +19,23 @@ public class StdSampler implements ComponentInstanceSampler {
 
     private final Supplier<Double> ng;
 
-    @Value("${hasco.simplified.std.samplesPerRefinement:4}")
-    private int samplesPerRefinement;
+    private final int samplesPerRefinement;
 
-    @Value("${hasco.simplified.std.drawNumericSplitMeans:false}")
-    private boolean drawNumericSplitMeans = false;
+    private final boolean drawNumericSplitMeans;
+
+
+    {
+        SimpleHASCOConfig config = ConfigCache.get(SimpleHASCOConfig.class);
+        samplesPerRefinement = config.getNumSamplesPerRefinement();
+        drawNumericSplitMeans = config.meanNumericSplit();
+    }
 
     public StdSampler(ComponentRegistry registry, Supplier<Double> ng) {
         this.ng = ng;
         this.registry = registry;
     }
 
-    @Autowired
-    public StdSampler(ComponentRegistry registry, @Value("${simplified.std.seed:0}") Long seed) {
+    public StdSampler(ComponentRegistry registry, Long seed) {
         this(registry, new Random(seed)::nextDouble);
     }
 

@@ -1,18 +1,11 @@
 package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.ComponentInstance;
-import org.springframework.stereotype.Component;
-
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 /**
  * Allows parallel access.
  */
-@Component
 public class EvaluationCache implements Comparator<ComponentInstance> {
 
 //    private Map<ComponentInstance, Optional<Double>> evalResults = new HashMap<>();

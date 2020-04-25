@@ -2,10 +2,10 @@ package ai.libs.hasco.simplified.std;
 
 import ai.libs.hasco.model.*;
 import ai.libs.hasco.simplified.RefinementService;
+import ai.libs.hasco.simplified.SimpleHASCOConfig;
+import org.aeonbits.owner.ConfigCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -22,8 +22,12 @@ public class RefinementProcess {
 
     private ComponentInstance nextComponentToBeRefined = null;
 
-    @Value("${hasco.simplified.publishNodes:false}")
-    private boolean publishNodes = false;
+    private final boolean publishNodes;
+
+    {
+        SimpleHASCOConfig config = ConfigCache.get(SimpleHASCOConfig.class);
+        publishNodes = config.areNodesPublished();
+    }
 
     public RefinementProcess(ComponentInstance base) {
         this.base = base;

@@ -3,18 +3,18 @@ package ai.libs.hasco.simplified.std;
 import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.simplified.ClosedList;
 import ai.libs.hasco.simplified.OpenList;
+import ai.libs.hasco.simplified.SimpleHASCOConfig;
 import ai.libs.jaicore.graphvisualizer.events.graph.GraphInitializedEvent;
 import ai.libs.jaicore.graphvisualizer.events.graph.NodeAddedEvent;
 import com.google.common.eventbus.EventBus;
+import org.aeonbits.owner.ConfigCache;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.*;
 import java.util.function.BiConsumer;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-@org.springframework.stereotype.Component
 public class StdCandidateContainer implements ClosedList, OpenList, Comparator<CIRoot> {
 
     private final static Logger logger = getLogger(StdCandidateContainer.class);
@@ -27,10 +27,14 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
 
     private BiConsumer<ComponentInstance, Double> sampleConsumer = (componentInstance, aDouble) -> {};
 
-    private EventBus eventBus;
+    private final EventBus eventBus;
 
-    @Value("${hasco.simplified.publishNodes:false}")
-    private boolean publishNodes = false;
+    private final boolean publishNodes;
+
+    {
+        SimpleHASCOConfig config = ConfigCache.getOrCreate(SimpleHASCOConfig.class);
+        publishNodes = config.areNodesPublished();
+    }
 
     public StdCandidateContainer(EventBus eventBus) {
         this.eventBus = eventBus;

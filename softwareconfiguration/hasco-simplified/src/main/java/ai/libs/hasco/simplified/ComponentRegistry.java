@@ -1,6 +1,5 @@
 package ai.libs.hasco.simplified;
 
-import ai.libs.hasco.core.SoftwareConfigurationProblem;
 import ai.libs.hasco.model.Component;
 import ai.libs.hasco.model.Parameter;
 import ai.libs.hasco.model.ParameterRefinementConfiguration;
@@ -10,8 +9,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-
-@org.springframework.stereotype.Component
 public class ComponentRegistry {
 
     private static ComponentRegistry EMPTY_REGISTRY = new ComponentRegistry(Collections.emptyList());

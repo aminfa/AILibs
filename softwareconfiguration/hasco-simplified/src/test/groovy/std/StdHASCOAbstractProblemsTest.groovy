@@ -3,6 +3,7 @@ package ai.libs.hasco.simplified.std
 import ai.libs.hasco.model.ComponentInstance
 import ai.libs.hasco.serialization.ComponentLoader
 import ai.libs.hasco.simplified.ComponentRegistry
+import spock.lang.IgnoreRest
 import spock.lang.Specification
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -26,8 +27,11 @@ class StdHASCOAbstractProblemsTest extends Specification {
         """
         SimpleHASCOStdBuilder hasco = new SimpleHASCOStdBuilder()
         hasco.seed = seed
+        hasco.setMinEvalQueueSize(1)
+        hasco.threadCount = 2
         hasco.requiredInterface = requiredInterfaceName
         hasco.registry = compsRegistry
+        hasco.artificialRoot = false
         hasco.evaluator = { componentInstance ->
             /*
              * The evaluator that is fed to HASCO.
@@ -58,7 +62,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
            The open-list has two root components A and B with nothing refined yet.
         """
         ! hasco.bestCandidateCache.getBestSeenCandidate().isPresent()
-        openList.queue.size()  == 2
+        openList.queue.size() == 2
 
         when:
         ComponentInstance rootA = openList.queue.find { compInst ->
@@ -81,8 +85,9 @@ class StdHASCOAbstractProblemsTest extends Specification {
             Run to the end.
         """
         runner.runAll()
-        def s = hasco.bestCandidateCache.bestSeenCandidate.get()
-
+        def root = hasco.bestCandidateCache.bestSeenCandidate.get()
+//        def s = root.getSatisfactionOfRequiredInterfaces().values()[0]
+        def s = root;
         then:
         """
             Inspect best candidate found:
@@ -107,6 +112,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         hasco.seed = seed
         hasco.requiredInterface = requiredInterface
         hasco.registry = compsRegistry
+        hasco.artificialRoot = false
         hasco.evaluator = { componentInstance ->
             evalCounter.incrementAndGet()
             /*
@@ -281,6 +287,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         illegalEvals.isEmpty()
     }
 
+//    @IgnoreRest
     def "test numeric dependencies test"() {
         def requiredInterface = "IFace"
         def compsFile = new File("testrsc/numericparamdependencies.json")
@@ -294,6 +301,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         hasco.seed = seed
         hasco.requiredInterface = requiredInterface
         hasco.registry = compsRegistry
+        hasco.artificialRoot = false
         hasco.evaluator = { componentInstance ->
             /*
              * The evaluator that is fed to HASCO.
@@ -347,6 +355,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         SimpleHASCOStdBuilder hasco = new SimpleHASCOStdBuilder()
         hasco.seed = seed
         hasco.requiredInterface = requiredInterface
+        hasco.artificialRoot = false
         hasco.registry = compsRegistry
         hasco.evaluator = { a ->
             /*

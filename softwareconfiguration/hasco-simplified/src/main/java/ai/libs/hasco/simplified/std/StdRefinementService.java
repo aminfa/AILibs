@@ -3,16 +3,15 @@ package ai.libs.hasco.simplified.std;
 import ai.libs.hasco.model.*;
 import ai.libs.hasco.simplified.ComponentRegistry;
 import ai.libs.hasco.simplified.RefinementService;
+import ai.libs.hasco.simplified.SimpleHASCOConfig;
+import org.aeonbits.owner.ConfigCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.*;
 
-@org.springframework.stereotype.Component
 public class StdRefinementService implements RefinementService {
 
     private final static Logger logger = LoggerFactory.getLogger(StdRefinementService.class);
@@ -24,14 +23,16 @@ public class StdRefinementService implements RefinementService {
         DECIMAL_FORMATTER = (DecimalFormat) NumberFormat.getNumberInstance(Locale.US);
     }
 
+    private final int numSplitsFallback;
 
-    @Value("${simplified.std.numSplitsFallback:2}")
-    private int numSplitsFallback = 2;
+    private final int minRangeSizeFallback;
 
-    @Value("${simplified.std.minRangeSizeFallback:2}")
-    private int minRangeSizeFallback = 2;
+    {
+        SimpleHASCOConfig config = ConfigCache.getOrCreate(SimpleHASCOConfig.class);
+        numSplitsFallback = config.getNumSplitsFallback();
+        minRangeSizeFallback = config.getMinRangeSizeFallback();
+    }
 
-    @Autowired
     public StdRefinementService(ComponentRegistry registry) {
         this.registry = registry;
     }

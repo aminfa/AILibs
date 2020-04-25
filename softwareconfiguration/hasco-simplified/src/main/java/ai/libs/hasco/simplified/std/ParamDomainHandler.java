@@ -4,16 +4,12 @@ import ai.libs.hasco.model.CategoricalParameterDomain;
 import ai.libs.hasco.model.IParameterDomain;
 import ai.libs.hasco.model.NumericParameterDomain;
 import ai.libs.jaicore.basic.sets.SetUtil;
-import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
-@Component
 public class ParamDomainHandler {
 
     static IParameterDomain strToParamDomain(final IParameterDomain domain,
