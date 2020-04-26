@@ -3,6 +3,7 @@ package ai.libs.hasco.simplified.std
 import ai.libs.hasco.serialization.ComponentLoader
 import ai.libs.hasco.simplified.ComponentEvaluator
 import ai.libs.hasco.simplified.ComponentRegistry
+import ai.libs.hasco.simplified.std.SimpleHASCOStdBuilder
 import ai.libs.hasco.simplified.std.ml.SimpleHASCOWEKABuilder
 import ai.libs.jaicore.ml.classification.loss.dataset.EClassificationPerformanceMeasure
 import ai.libs.jaicore.ml.core.evaluation.evaluator.SupervisedLearnerExecutor
@@ -90,7 +91,6 @@ class SimpleHASCOWekaARFFTest extends Specification {
     }
 
 
-    @Ignore
     def "test"() {
         SimpleHASCOStdBuilder stdHASCO = new SimpleHASCOStdBuilder()
         stdHASCO.registry = registry
@@ -128,9 +128,9 @@ class SimpleHASCOWekaARFFTest extends Specification {
         builder.seed = 1L
         builder.setRefinementTime(30, TimeUnit.SECONDS)
         builder.setSampleTime(10, TimeUnit.SECONDS)
-        builder.setSampleConsumer({ ci, result ->
-            println("Received component instance ${ci} with result ${result}.")
-        })
+//        builder.setSampleConsumer({ ci, result ->
+//            println("Received component instance ${ci} with result ${result}.")
+//        })
         builder.flagRandomNumericSampling = true
         builder.threadCount = 8
         builder.minEvalQueueSize = 4

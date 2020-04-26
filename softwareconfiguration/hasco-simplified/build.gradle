@@ -1,6 +1,6 @@
 
 plugins {
-    id 'groovy'
+    id 'groovy-base'
 }
 
 dependencies {
@@ -14,9 +14,8 @@ dependencies {
     testCompile project(path: ':JAICore:jaicore-basic', configuration: 'testArtifacts')
 
     // mandatory dependencies for using Spock
-    testCompile "org.codehaus.groovy:groovy-all:2.5.8"
-    testCompile platform("org.spockframework:spock-bom:2.0-M1-groovy-2.5")
-    testCompile "org.spockframework:spock-core"
+    testImplementation 'org.codehaus.groovy:groovy-all:2.5.7'
+    testImplementation 'org.spockframework:spock-core:1.3-groovy-2.5'
 
     // Logging libraries
     testCompile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.0'
@@ -29,5 +28,10 @@ sourceSets {
         java {
             srcDir 'src/test/resources'
         }
+    }
+}
+test {
+    beforeTest { descriptor ->
+        logger.lifecycle("Running test: ${descriptor}")
     }
 }
