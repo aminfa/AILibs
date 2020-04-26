@@ -1,23 +1,15 @@
 
 plugins {
-    id 'java-library'
+    id 'groovy'
 }
 
 dependencies {
-    api project(':hasco-core')
+    compile project(':hasco-core')
 
 	// basic dependencies
 	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8'
 
-    api project(":mlplan-weka")
-
-    implementation group: 'org.springframework', name: 'spring-core', version: '5.2.3.RELEASE'
-
-    implementation group: 'org.springframework', name: 'spring-context', version: '5.2.3.RELEASE'
-
-    implementation group: 'org.springframework', name: 'spring-beans', version: '5.2.3.RELEASE'
-
-
+    compile project(":mlplan-weka")
 
     testCompile project(path: ':JAICore:jaicore-basic', configuration: 'testArtifacts')
 
