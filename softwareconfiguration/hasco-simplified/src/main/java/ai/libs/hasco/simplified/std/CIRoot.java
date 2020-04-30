@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class CIRoot extends CIIndexed implements Comparable<CIRoot> {
+public abstract class CIRoot extends CIIndexed implements Comparable<CIRoot> {
     private CIRoot parentNode = null;
 
     private final static Logger logger = LoggerFactory.getLogger(CIRoot.class);

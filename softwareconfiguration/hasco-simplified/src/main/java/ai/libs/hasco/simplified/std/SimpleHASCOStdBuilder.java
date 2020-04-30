@@ -212,8 +212,7 @@ public class SimpleHASCOStdBuilder implements
         if(hasco != null) {
             return hasco;
         }
-        EventBus eventBus = new EventBus();
-        container = new StdCandidateContainer(eventBus);
+        container = new StdCandidateContainer();
         initializeRootComponents();
         candidateCache = new BestCandidateCache(container);
         Objects.requireNonNull(evaluator);
@@ -225,10 +224,9 @@ public class SimpleHASCOStdBuilder implements
         IObjectEvaluator<ComponentInstance, Double> objectEvaluator = evaluator.toIObjectEvaluator();
         SoftwareConfigurationProblem coreProblem = new SoftwareConfigurationProblem<Double>(registry.getComponentList(), requiredInterface, objectEvaluator);
         RefinementConfiguredSoftwareConfigurationProblem<Double> input = new RefinementConfiguredSoftwareConfigurationProblem<>(coreProblem, registry.getParamConfigs());
-        view = new SimpleHASCOAlgorithmView(Optional.of(config), input, hasco, candidateCache, eventBus);
-
-
-
+        view = new SimpleHASCOAlgorithmView(Optional.of(config), input, hasco, candidateCache);
+        container.addEventPublisher(view);
+        container.setRequired(requiredInterface);
         return hasco;
     }
 

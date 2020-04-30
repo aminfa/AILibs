@@ -3,6 +3,16 @@ package ai.libs.hasco.simplified.std
 import ai.libs.hasco.model.ComponentInstance
 import ai.libs.hasco.serialization.ComponentLoader
 import ai.libs.hasco.simplified.ComponentRegistry
+import ai.libs.jaicore.graphvisualizer.plugin.graphview.GraphViewPlugin
+import ai.libs.jaicore.graphvisualizer.plugin.nodeinfo.NodeDisplayInfoAlgorithmEventPropertyComputer
+import ai.libs.jaicore.graphvisualizer.plugin.nodeinfo.NodeInfoGUIPlugin
+import ai.libs.jaicore.graphvisualizer.window.AlgorithmVisualizationWindow
+import ai.libs.jaicore.planning.hierarchical.algorithms.forwarddecomposition.graphgenerators.tfd.TFDNodeInfoGenerator
+import ai.libs.jaicore.search.gui.plugins.rollouthistograms.SearchRolloutHistogramPlugin
+import ai.libs.jaicore.search.model.travesaltree.JaicoreNodeInfoGenerator
+import javafx.application.Platform
+import javafx.embed.swing.JFXPanel
+import org.spockframework.runtime.extension.builtin.IgnoreRestExtension
 import spock.lang.IgnoreRest
 import spock.lang.Specification
 
@@ -13,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class StdHASCOAbstractProblemsTest extends Specification {
 
+    @IgnoreRest
     def "test simple problem with two components"() {
         def requiredInterfaceName = 'IFace'
         def compsFile = new File("testrsc/simpleproblemwithtwocomponents.json")
@@ -57,6 +68,10 @@ class StdHASCOAbstractProblemsTest extends Specification {
         def runner = hasco.simpleHASCOInstance
         def openList = hasco.stdCandidateContainer
 
+        new JFXPanel();
+        AlgorithmVisualizationWindow window = new AlgorithmVisualizationWindow(hasco.algorithm, [new NodeDisplayInfoAlgorithmEventPropertyComputer(new SimpleHASCOAlgorithmView.SimpleNodeInfoGenerator())], new GraphViewPlugin(), new SearchRolloutHistogramPlugin());
+        Platform.runLater(window);
+
         then:"""
            No solution has been seed yet.
            The open-list has two root components A and B with nothing refined yet.
@@ -88,6 +103,7 @@ class StdHASCOAbstractProblemsTest extends Specification {
         def root = hasco.bestCandidateCache.bestSeenCandidate.get()
 //        def s = root.getSatisfactionOfRequiredInterfaces().values()[0]
         def s = root;
+
         then:
         """
             Inspect best candidate found:
@@ -98,6 +114,8 @@ class StdHASCOAbstractProblemsTest extends Specification {
         s.parameterValues['b'] == 'v1'
         hasco.bestCandidateCache.bestSeenScore.get() == 1.0
     }
+
+
 
     def "test difficult problem" () {
         def requiredInterface = "IFace"

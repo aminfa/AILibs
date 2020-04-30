@@ -4,6 +4,7 @@ import ai.libs.hasco.model.ComponentInstance;
 import ai.libs.hasco.simplified.ClosedList;
 import ai.libs.hasco.simplified.OpenList;
 import ai.libs.hasco.simplified.SimpleHASCOConfig;
+import ai.libs.jaicore.graphvisualizer.events.graph.GraphEvent;
 import ai.libs.jaicore.graphvisualizer.events.graph.GraphInitializedEvent;
 import ai.libs.jaicore.graphvisualizer.events.graph.NodeAddedEvent;
 import com.google.common.eventbus.EventBus;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -27,7 +29,7 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
 
     private BiConsumer<ComponentInstance, Double> sampleConsumer = (componentInstance, aDouble) -> {};
 
-    private final EventBus eventBus;
+    private Consumer<GraphEvent> eventPublisher = e -> {};
 
     private final boolean publishNodes;
 
@@ -36,10 +38,14 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
         publishNodes = config.areNodesPublished();
     }
 
-    public StdCandidateContainer(EventBus eventBus) {
-        this.eventBus = eventBus;
+    public StdCandidateContainer() {
         this.queue = new PriorityQueue<>(this);
     }
+
+    public void addEventPublisher(Consumer<GraphEvent> eventPublisher) {
+        this.eventPublisher = this.eventPublisher.andThen(eventPublisher);
+    }
+
 
     @Override
     public boolean isClosed(ComponentInstance candidate) {
@@ -80,9 +86,17 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
 
         if(publishNodes) {
             NodeAddedEvent<Object> nodeAddedEvent = new NodeAddedEvent<>(null, root.getParentNode(), root, "rootComponent");
-            eventBus.post(nodeAddedEvent);
+            eventPublisher.accept(nodeAddedEvent);
         }
 
+    }
+
+    public void setRequired(String requiredInterface) {
+        this.requiredInterface = requiredInterface;
+        if(publishNodes) {
+            GraphInitializedEvent<String> event = new GraphInitializedEvent<String>(null, requiredInterface);
+            eventPublisher.accept(event);
+        }
     }
 
     public void insertRoot(ComponentInstance root) {
@@ -90,7 +104,7 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
         queue.add(castToRoot(root));
         if(publishNodes) {
             NodeAddedEvent<Object> nodeAddedEvent = new NodeAddedEvent<>(null, requiredInterface, root, "rootComponent");
-            eventBus.post(nodeAddedEvent);
+            eventPublisher.accept(nodeAddedEvent);
         }
     }
 
@@ -127,11 +141,4 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
         }
     }
 
-    public void setRequired(String requiredInterface) {
-        this.requiredInterface = requiredInterface;
-        if(publishNodes) {
-            GraphInitializedEvent<String> event = new GraphInitializedEvent<String>(null, requiredInterface);
-            eventBus.post(event);
-        }
-    }
 }
