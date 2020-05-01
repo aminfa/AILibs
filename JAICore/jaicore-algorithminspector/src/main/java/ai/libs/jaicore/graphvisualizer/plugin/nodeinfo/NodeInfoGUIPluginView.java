@@ -8,45 +8,34 @@ import javafx.scene.web.WebView;
 
 /**
  *
- * @author hetzer
+ * @author Felix Mohr
  *
- * @param <N>
- *            The node class
  */
 public class NodeInfoGUIPluginView extends ASimpleMVCPluginView<NodeInfoGUIPluginModel, NodeInfoGUIPluginController, FlowPane> {
-
-	private NodeInfoGUIPluginModel model;
-
-	private String title;
 
 	private WebEngine webViewEngine;
 
 	public NodeInfoGUIPluginView(final NodeInfoGUIPluginModel model) {
-		super (model, new FlowPane());
-		WebView view = new WebView();
-		FlowPane node = this.getNode();
-		node.getChildren().add(view);
-		this.webViewEngine = view.getEngine();
-		this.webViewEngine.loadContent("<i>No node selected</i>");
+		super(model, new FlowPane());
+		Platform.runLater(() -> {
+			WebView view = new WebView();
+			FlowPane node = this.getNode();
+			node.getChildren().add(view);
+			this.webViewEngine = view.getEngine();
+			this.webViewEngine.loadContent("<i>No node selected</i>");
+		});
 	}
-
 
 	@Override
 	public void update() {
-		String nodeInfoOfCurrentlySelectedNode = this.model.getNodeInfoForCurrentlySelectedNode();
+		String nodeInfoOfCurrentlySelectedNode = this.getModel().getNodeInfoForCurrentlySelectedNode();
 		Platform.runLater(() -> this.webViewEngine.loadContent(nodeInfoOfCurrentlySelectedNode));
 	}
 
 	@Override
-	public NodeInfoGUIPluginModel getModel() {
-		return this.model;
-	}
-
-	@Override
 	public String getTitle() {
-		return this.title;
+		return "Node Information";
 	}
-
 
 	@Override
 	public void clear() {
