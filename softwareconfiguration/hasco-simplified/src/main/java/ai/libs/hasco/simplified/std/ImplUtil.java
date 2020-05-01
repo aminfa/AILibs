@@ -140,5 +140,20 @@ public class ImplUtil {
         }
     }
 
+    public static Optional<ComponentInstance> findFirstProviderOfInterface(final ComponentInstance root, final String requiredInterface) {
+        Queue<ComponentInstance> searchQueue = new LinkedList<>();
+        searchQueue.add(root);
+        while(!searchQueue.isEmpty()) {
+            ComponentInstance cursor = searchQueue.poll();
+            if(cursor == null) {
+                throw new RuntimeException("A component instance was null.");
+            }
+            if(cursor.getComponent().getProvidedInterfaces().contains(requiredInterface)) {
+                return Optional.of(cursor);
+            }
+            searchQueue.addAll(cursor.getSatisfactionOfRequiredInterfaces().values());
+        }
+        return Optional.empty();
+    }
 
 }

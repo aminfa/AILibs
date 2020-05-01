@@ -20,7 +20,7 @@ public class RefinementProcess {
 
     private String displayName;
 
-    private ComponentInstance nextComponentToBeRefined = null;
+    private ComponentInstance componentToBeRefined = null;
 
     private final boolean publishNodes;
 
@@ -54,13 +54,13 @@ public class RefinementProcess {
             return false;
         }
         logger.trace("The next component to be refined is on path: {}", componentPath);
-        this.nextComponentToBeRefined = (componentInstance);
-        setDisplayName(String.format("Refinement of component %s > [%s]", componentPath, nextComponentToBeRefined.getComponent().getName()));
+        this.componentToBeRefined = (componentInstance);
+        setDisplayName(String.format("Refinement of component %s > [%s]", componentPath, componentToBeRefined.getComponent().getName()));
         return true;
     }
 
     public boolean setComponentToBeRefined(ComponentInstance nextComponentToBeRefined) {
-        this.nextComponentToBeRefined = nextComponentToBeRefined;
+        this.componentToBeRefined = nextComponentToBeRefined;
         logger.trace("The next component to be refined is a: {}", nextComponentToBeRefined.getComponent().getName());
         if(nextComponentToBeRefined instanceof CIIndexed)
             setDisplayName(
@@ -72,12 +72,12 @@ public class RefinementProcess {
         return true;
     }
 
-    public ComponentInstance getNextComponentToBeRefined() {
-        return nextComponentToBeRefined;
+    public ComponentInstance getComponentToBeRefined() {
+        return componentToBeRefined;
     }
 
     public boolean isInitialized() {
-        return nextComponentToBeRefined != null;
+        return componentToBeRefined != null;
     }
 
     private void assertInitialized() {
@@ -93,7 +93,7 @@ public class RefinementProcess {
         assertInitialized();
         setDisplayName(String.format("%s required interface %s", displayText(), requiredInterfaceId));
         List<ComponentInstance> children = new ArrayList<>();
-        Component baseComponent = nextComponentToBeRefined.getComponent();
+        Component baseComponent = componentToBeRefined.getComponent();
         if(baseComponent.getRequiredInterfaces().containsKey(requiredInterfaceId)) {
             String requiredInterface = baseComponent.getRequiredInterfaces().get(requiredInterfaceId);
             if(requiredInterface == null) {
@@ -102,7 +102,7 @@ public class RefinementProcess {
                 throw new NullPointerException("The required interface is null: " + requiredInterfaceId);
             }
             boolean refinementDone = refiner.refineRequiredInterface(children, base,
-                    nextComponentToBeRefined, requiredInterfaceId, requiredInterface);
+                    componentToBeRefined, requiredInterfaceId, requiredInterface);
             if(refinementDone && children.isEmpty()){
                 logger.warn("{} - The refinement " +
                         "returned no candidates but signaled that it is finished.",
@@ -133,22 +133,22 @@ public class RefinementProcess {
         assertInitialized();
         setDisplayName(String.format("%s refine param %s", displayText(), paramName));
         List<ComponentInstance> children = new ArrayList<>();
-        Component componentType = nextComponentToBeRefined.getComponent();
+        Component componentType = componentToBeRefined.getComponent();
         Parameter paramToBeRefined = componentType.getParameterWithName(paramName);
         if (paramToBeRefined == null) {
             logger.error("{} - Parameter {}.{} was null.", displayName, componentType.getName(), paramName);
             throw new NullPointerException(String.format("Parameter is null: %s.%s", componentType.getName(), paramName));
         }
-        String parameterValue = nextComponentToBeRefined.getParameterValue(paramToBeRefined);
+        String parameterValue = componentToBeRefined.getParameterValue(paramToBeRefined);
         boolean refinementDone = false;
         if (paramToBeRefined.isNumeric()) {
             refinementDone = refiner.refineNumericalParameter(children, base,
-                    nextComponentToBeRefined,
+                    componentToBeRefined,
                     (NumericParameterDomain) paramToBeRefined.getDefaultDomain(),
                     paramName, parameterValue);
         } else if (paramToBeRefined.isCategorical()) {
             refinementDone = refiner.refineCategoricalParameter(children, base,
-                    nextComponentToBeRefined,
+                    componentToBeRefined,
                     (CategoricalParameterDomain) paramToBeRefined.getDefaultDomain(), paramName, parameterValue);
         } else {
             logger.error("Parameter {}.{} is neither numerical nor categorical. Ignoring parameter", componentType.getName(), paramName);
@@ -168,6 +168,15 @@ public class RefinementProcess {
         }
         return refinementDone;
     }
+
+    public void transitionToPhase2() {
+        if(base instanceof CIPhase1) {
+            refinements.add(new CIPhase2((CIPhase1) base));
+        } else {
+            throw new IllegalStateException("Cannot transition base of type " + base.getClass().getSimpleName() + " to phase 2");
+        }
+    }
+
     private ComponentInstance searchSatisfyingComponent(List<String> componentPath) {
         if(componentPath == null || componentPath.isEmpty()) {
             return base;
@@ -199,6 +208,7 @@ public class RefinementProcess {
 
     public List<ComponentInstance> getRefinements() {
         if(publishNodes) {
+            logger.info("Setting parent node of refinement because publishNode configuration is true.");
             refinements.forEach(ci -> ((CIRoot) ci).setParentNode((CIRoot) base));
         }
         return refinements;

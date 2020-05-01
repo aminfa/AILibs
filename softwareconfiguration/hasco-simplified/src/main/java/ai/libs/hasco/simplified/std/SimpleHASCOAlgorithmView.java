@@ -47,7 +47,7 @@ public class SimpleHASCOAlgorithmView extends AAlgorithm<RefinementConfiguredSof
     }
 
     @Override
-    public IAlgorithmEvent nextWithException() throws InterruptedException, AlgorithmExecutionCanceledException, AlgorithmTimeoutedException, AlgorithmException {
+    public IAlgorithmEvent nextWithException() throws InterruptedException {
         try {
             this.registerActiveThread();
             switch (this.getState()) {
@@ -115,7 +115,8 @@ public class SimpleHASCOAlgorithmView extends AAlgorithm<RefinementConfiguredSof
         @Override
         public String generateInfoForNode(CIRoot node) {
             StringBuilder sb = new StringBuilder();
-            sb.append("<h2>Phase: ");
+            sb.append(generateRootComponentInfo(node));
+            sb.append("<h4>Phase: ");
             if(node instanceof CIPhase1) {
                 sb.append("1");
             } else if(node instanceof CIPhase2) {
@@ -123,7 +124,7 @@ public class SimpleHASCOAlgorithmView extends AAlgorithm<RefinementConfiguredSof
             } else {
                 sb.append("unknown(").append(node.getClass().getSimpleName()).append(")");
             }
-            sb.append("</h2>");
+            sb.append("</h4>");
             try {
                 String evalInfo = generateEvalInfo(node);
                 sb.append(evalInfo);
@@ -139,10 +140,16 @@ public class SimpleHASCOAlgorithmView extends AAlgorithm<RefinementConfiguredSof
             return sb.toString();
         }
 
+        private String generateRootComponentInfo(CIRoot node) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("<h4>Root Component:").append(node.getComponent().getName()).append("</h4>");
+            return sb.toString();
+        }
+
         private String generateEvalInfo(CIRoot node) {
             StringBuilder sb = new StringBuilder();
             if (node.hasBeenEvaluated()) {
-                sb.append("<h2>Evaluated:</h2>");
+                sb.append("<h4>Evaluated:</h4>");
                 EvalReport evalReport = node.getEvalReport();
                 Optional<Double> score = evalReport.getScore();
                 if (score.isPresent()) {
@@ -151,13 +158,13 @@ public class SimpleHASCOAlgorithmView extends AAlgorithm<RefinementConfiguredSof
                     sb.append("error");
                 }
                 List<ComponentInstance> witnesses = evalReport.getWitnesses();
-                sb.append(" (based on ").append(witnesses.size()).append(" samples)");
+                sb.append("<br>Based on ").append(witnesses.size()).append(" samples:");
                 sb.append("<ul>");
                 for (int i = 0; i < witnesses.size(); i++) {
                     sb.append("<li>");
                     Optional<Double> witnessScore = evalReport.getWitnessScores().get(i);
                     if (witnessScore.isPresent()) {
-                        sb.append("score: ").append(String.format("%.2f", witnessScore.get()));
+                        sb.append("score ").append(i).append(": ").append(String.format("%.2f", witnessScore.get()));
                     } else {
                         sb.append("error");
                     }
@@ -165,7 +172,7 @@ public class SimpleHASCOAlgorithmView extends AAlgorithm<RefinementConfiguredSof
                 }
                 sb.append("</ul>");
             } else {
-                sb.append("<h2>Not evaluated yet.</h2>");
+                sb.append("<h4>Not evaluated yet.</h4>");
             }
             return sb.toString();
         }
@@ -176,19 +183,21 @@ public class SimpleHASCOAlgorithmView extends AAlgorithm<RefinementConfiguredSof
                 List<InterfaceRefinementRecord> refinementHistory = ((CIPhase1) node).getRefinementHistory();
                 if (!refinementHistory.isEmpty()) {
                     InterfaceRefinementRecord lastRefinement = refinementHistory.get(refinementHistory.size() - 1);
-                    sb.append("<h2>Interface refinement</h2>");
-                    sb.append("Satisfied interface path: ").append(Arrays.toString(lastRefinement.getInterfaceRefinementPath())).append("<br>");
+                    sb.append("<h4>Interface refinement</h4>");
+                    sb.append("Component interface path: ").append(Arrays.toString(lastRefinement.getInterfaceRefinementPath())).append("<br>");
                     sb.append("Satisfied with instance of component: ").append(node.getComponentByPath(lastRefinement.getInterfaceRefinementPath()).getComponent().getName());
                 }
             } else if (node instanceof CIPhase2) {
                 Optional<ParamRefinementRecord> previousRecord = ((CIPhase2) node).getPreviousRecord();
                 if (previousRecord.isPresent()) {
-                    sb.append("<h2>Parameter refinement</h2>");
+                    sb.append("<h4>Parameter refinement</h4>");
                     String[] componentPath = previousRecord.get().getComponentPath();
+                    ComponentInstance paramComp = node.getComponentByPath(componentPath);
                     String paramName = previousRecord.get().getParamName();
-                    sb.append("Parameter interface path: ").append(Arrays.toString(componentPath)).append("<br>");
-                    sb.append("Parameter: ").append(paramName).append("<br>");
-                    String parameterValue = node.getComponentByPath(componentPath).getParameterValue(paramName);
+                    sb.append("Component interface path: ").append(Arrays.toString(componentPath)).append("<br>");
+                    sb.append("Component name: ").append(paramComp.getComponent().getName());
+                    sb.append("Parameter name: ").append(paramName).append("<br>");
+                    String parameterValue = paramComp.getParameterValue(paramName);
                     sb.append("Parameter value: ").append(parameterValue).append("<br>");
                 }
             }

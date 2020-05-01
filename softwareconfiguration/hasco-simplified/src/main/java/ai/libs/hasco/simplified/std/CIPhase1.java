@@ -76,7 +76,6 @@ public class CIPhase1 extends CIRoot {
     }
 
 
-
     @Override
     public boolean equals(Object obj) {
         if(super.equals(obj)) {

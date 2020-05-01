@@ -47,6 +47,10 @@ public class CIIndexed extends ComponentInstance {
                 getComponent().getName());
     }
 
+    public String toString() {
+        return getClass().getSimpleName() + " :: " + displayText();
+    }
+
     /*
      * TODO move the following methods to a CIBase class which is a parent of the two phases
      */

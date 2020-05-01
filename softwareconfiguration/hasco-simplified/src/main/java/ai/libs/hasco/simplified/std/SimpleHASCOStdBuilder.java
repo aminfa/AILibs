@@ -39,7 +39,7 @@ public class SimpleHASCOStdBuilder implements
 
     private String requiredInterface;
 
-    private SimpleHASCOConfig config = ConfigCache.getOrCreate(SimpleHASCOConfig.class);
+    private final SimpleHASCOConfig config = ConfigCache.getOrCreate(SimpleHASCOConfig.class);
 
     private ComponentEvaluator evaluator;
 
@@ -213,7 +213,6 @@ public class SimpleHASCOStdBuilder implements
             return hasco;
         }
         container = new StdCandidateContainer();
-        initializeRootComponents();
         candidateCache = new BestCandidateCache(container);
         Objects.requireNonNull(evaluator);
         StdSampler sampler = new StdSampler(registry, getSeed());
@@ -227,6 +226,7 @@ public class SimpleHASCOStdBuilder implements
         view = new SimpleHASCOAlgorithmView(Optional.of(config), input, hasco, candidateCache);
         container.addEventPublisher(view);
         container.setRequired(requiredInterface);
+        initializeRootComponents();
         return hasco;
     }
 
@@ -244,7 +244,7 @@ public class SimpleHASCOStdBuilder implements
 
     private CIPhase1 createArtificialComponent() {
         Component artificialComponent = new Component("ROOT", Collections.emptyList(),
-                Collections.singletonMap("ROOT_REQUIRED_INTERFACE", Objects.requireNonNull(requiredInterface)),
+                Collections.singletonMap(Objects.requireNonNull(requiredInterface), Objects.requireNonNull(requiredInterface)),
                 new PartialOrderedSet<>(), Collections.emptyList());
         CIPhase1 componentInstanceRoot = CIPhase1.createRoot(artificialComponent);
         return componentInstanceRoot;

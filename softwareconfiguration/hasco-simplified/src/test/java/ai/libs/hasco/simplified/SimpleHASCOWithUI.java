@@ -6,6 +6,7 @@ import ai.libs.hasco.simplified.std.SimpleHASCOAlgorithmView;
 import ai.libs.hasco.simplified.std.SimpleHASCOStdBuilder;
 import ai.libs.jaicore.graphvisualizer.plugin.graphview.GraphViewPlugin;
 import ai.libs.jaicore.graphvisualizer.plugin.nodeinfo.NodeDisplayInfoAlgorithmEventPropertyComputer;
+import ai.libs.jaicore.graphvisualizer.plugin.nodeinfo.NodeInfoGUIPlugin;
 import ai.libs.jaicore.graphvisualizer.window.AlgorithmVisualizationWindow;
 import ai.libs.jaicore.search.gui.plugins.rollouthistograms.SearchRolloutHistogramPlugin;
 import javafx.application.Platform;
@@ -18,12 +19,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 public class SimpleHASCOWithUI {
 
     public static void main(String[] args) throws IOException, InterruptedException, AlgorithmTimeoutedException, AlgorithmExecutionCanceledException, AlgorithmException {
         String requiredInterface = "IFace";
-        File compsFile = new File("softwareconfiguration/hasco-simplified/testrsc/simpleproblemwithtwocomponents.json");
+        File compsFile = new File("softwareconfiguration/hasco-simplified/testrsc/difficultproblem.json");
         ComponentLoader compsLoader = new ComponentLoader(compsFile);
         ComponentRegistry compsRegistry = ComponentRegistry.fromComponentLoader(compsLoader);
         long seed = 1L;
@@ -33,23 +35,21 @@ public class SimpleHASCOWithUI {
         hasco.setThreadCount(2);
         hasco.setRequiredInterface(requiredInterface);
         hasco.setRegistry(compsRegistry);
-        hasco.setArtificialRoot(false);
+        hasco.setArtificialRoot(true);
         hasco.setPublishNodeEvent(true);
-        hasco.setEvaluator((s) -> Optional.of(1.0));
-//        hasco.init();
+        hasco.setRefinementTime(2, TimeUnit.MINUTES);
+        hasco.setSampleTime(2, TimeUnit.MINUTES);
+        hasco.setEvaluator((s) -> {Thread.sleep(1000);return Optional.of(1.0);});
         SimpleHASCOAlgorithmView algorithm = hasco.getAlgorithm();
         new JFXPanel();
 
-        AlgorithmVisualizationWindow window = new AlgorithmVisualizationWindow(hasco.getAlgorithm(),
-                Arrays.asList(new NodeDisplayInfoAlgorithmEventPropertyComputer<>(new SimpleHASCOAlgorithmView.SimpleNodeInfoGenerator())),
-                new GraphViewPlugin(),
-                new SearchRolloutHistogramPlugin());
-//        Platform.runLater(window);
-        window.show();
+        AlgorithmVisualizationWindow window = new AlgorithmVisualizationWindow(algorithm);
+        window.withMainPlugin(new GraphViewPlugin());
+        window.withPlugin(new NodeInfoGUIPlugin(new SimpleHASCOAlgorithmView.SimpleNodeInfoGenerator()), new SearchRolloutHistogramPlugin());
         hasco.getAlgorithm().call();
         synchronized (window) {
             window.wait();
         }
-//        Thread.yield();
     }
+
 }

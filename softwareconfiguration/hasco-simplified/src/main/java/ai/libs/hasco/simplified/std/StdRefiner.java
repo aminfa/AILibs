@@ -114,24 +114,24 @@ public class StdRefiner implements ComponentRefiner {
 
 
     private List<ComponentInstance> refineComponents(CIPhase1 base) {
+        RefinementProcess process = new RefinementProcess(base);
         List<String> path = BFSUnSatInterface(base); // The last element is the interface name
+        logger.trace("Adding a Phase2 (param refinement) as a child to phase1: {}", base);
+        process.transitionToPhase2();
         if(path.isEmpty()) {
             /*
              * All the required interfaces of all component instances have been satisfied.
              */
-            CIPhase2 phase2 = new CIPhase2(base);
             logger.info("All required interfaces of {} has been set." +
-                    " It will go over into phase two: {}",
-                    base.displayText(),
-                    phase2.displayText());
-            return Collections.singletonList(phase2);
+                            " It will go over into phase two.",
+                    base.displayText());
+            return process.getRefinements();
         }
         String interfaceName = path.remove(path.size() - 1);
         if(logger.isTraceEnabled())
             logger.trace("Refining root {} - refining required inteface `{}` of component along path: {}.",
                 base.displayText(), interfaceName, path);
         ComponentInstance trg = base.getComponentByPath(path);
-        RefinementProcess process = new RefinementProcess(base);
         process.setComponentToBeRefined(trg);
         boolean done = process.refineRequiredInterface(interfaceName, refService);
         List<ComponentInstance> refinements = new ArrayList<>(process.getRefinements());
@@ -145,9 +145,7 @@ public class StdRefiner implements ComponentRefiner {
             logger.info("{}: yielded {} many refinements.",
                     process.displayText(), refinements.size());
         }
-        CIPhase2 phase2 = new CIPhase2(base);
-        logger.debug("Adding a Phase2 (param refinement) as a child: {}", phase2.displayText());
-        refinements.add(phase2);
+
         return refinements;
     }
 

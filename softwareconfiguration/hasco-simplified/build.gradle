@@ -10,6 +10,7 @@ dependencies {
 	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8'
 
     compile project(":mlplan-weka")
+//    testCompile group: 'ai.libs.thirdparty', name: 'interruptible-weka', version: '0.1.4'
 
     testCompile project(path: ':JAICore:jaicore-basic', configuration: 'testArtifacts')
 

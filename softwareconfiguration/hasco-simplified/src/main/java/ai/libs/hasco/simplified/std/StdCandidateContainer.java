@@ -93,19 +93,19 @@ public class StdCandidateContainer implements ClosedList, OpenList, Comparator<C
 
     public void setRequired(String requiredInterface) {
         this.requiredInterface = requiredInterface;
-        if(publishNodes) {
-            GraphInitializedEvent<String> event = new GraphInitializedEvent<String>(null, requiredInterface);
-            eventPublisher.accept(event);
-        }
     }
 
     public void insertRoot(ComponentInstance root) {
         firstRoots.add(castToRoot(root));
         queue.add(castToRoot(root));
         if(publishNodes) {
-            NodeAddedEvent<Object> nodeAddedEvent = new NodeAddedEvent<>(null, requiredInterface, root, "rootComponent");
-            eventPublisher.accept(nodeAddedEvent);
+            GraphInitializedEvent<Object> event = new GraphInitializedEvent<Object>(null, root);
+            eventPublisher.accept(event);
         }
+//        if(publishNodes) {
+//            NodeAddedEvent<Object> nodeAddedEvent = new NodeAddedEvent<>(null, requiredInterface, root, "rootComponent");
+//            eventPublisher.accept(nodeAddedEvent);
+//        }
     }
 
     @Override
